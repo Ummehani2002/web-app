@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\MicrosoftOAuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CompanyMasterController;
+use App\Http\Controllers\ItemIssueController;
+use App\Http\Controllers\ProjectMasterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +22,11 @@ use App\Http\Controllers\DashboardController;
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
+
+// Auth middleware expects a named "login" route
+Route::get('/login', function () {
+    return redirect()->route('home');
+})->name('login');
 
 // Microsoft OAuth Routes
 Route::get('/auth/microsoft', [MicrosoftOAuthController::class, 'redirectToMicrosoft'])
@@ -38,7 +46,52 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard (Main protected route)
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
-    
+
+    // Company Master (first master setup)
+    Route::get('/masters/company', [CompanyMasterController::class, 'index'])
+        ->name('masters.company.index');
+    Route::post('/masters/company', [CompanyMasterController::class, 'store'])
+        ->name('masters.company.store');
+    Route::post('/masters/company/sync-d365', [CompanyMasterController::class, 'syncFromD365'])
+        ->name('masters.company.sync');
+
+    Route::get('/masters/project', [ProjectMasterController::class, 'index'])
+        ->name('masters.project.index');
+    Route::post('/masters/project/sync-d365', [ProjectMasterController::class, 'syncFromD365'])
+        ->name('masters.project.sync');
+
+    $masterStubs = [
+        'categories' => 'Categories',
+        'items' => 'Items',
+        'sizes' => 'Sizes',
+        'colors' => 'Colors',
+        'styles' => 'Styles',
+        'locations' => 'Locations',
+        'sites' => 'Sites',
+        'warehouses' => 'Warehouses',
+        'currencies' => 'Currencies',
+        'units' => 'Units',
+        'pools' => 'Pools',
+        'batches' => 'Batches',
+        'sales-tax-groups' => 'Sales Tax Groups',
+        'item-sales-tax-groups' => 'Item Sales Tax Groups',
+        'department-managers' => 'Department Managers',
+    ];
+    foreach ($masterStubs as $slug => $title) {
+        Route::get("/masters/{$slug}", function () use ($title) {
+            return view('masters.placeholder', ['title' => $title]);
+        })->name("masters.{$slug}.index");
+    }
+
+    Route::get('/modules/project-management/item-issue', [ItemIssueController::class, 'index'])
+        ->name('modules.project-management.item-issue');
+    Route::post('/modules/project-management/item-issue/api/items/lookup', [ItemIssueController::class, 'lookupItems'])
+        ->name('modules.project-management.item-issue.api.items.lookup');
+    Route::post('/modules/project-management/item-issue/api/projects/lookup', [ItemIssueController::class, 'lookupProjects'])
+        ->name('modules.project-management.item-issue.api.projects.lookup');
+    Route::post('/modules/project-management/item-issue/api/post', [ItemIssueController::class, 'post'])
+        ->name('modules.project-management.item-issue.api.post');
+
     // Laravel expects /home after login, so redirect it to dashboard
     Route::get('/home', function () {
         return redirect()->route('dashboard');

@@ -54,4 +54,21 @@ return [
         'User.Read',
     ],
 ],
+
+'d365' => [
+    'tenant_id' => env('D365_TENANT_ID', env('MICROSOFT_TENANT_ID')),
+    'client_id' => env('D365_CLIENT_ID', env('MICROSOFT_CLIENT_ID')),
+    'client_secret' => env('D365_CLIENT_SECRET', env('MICROSOFT_CLIENT_SECRET')),
+    'scope' => env('D365_SCOPE', 'https://api.businesscentral.dynamics.com/.default'),
+    'base_url' => env('D365_BASE_URL'),
+    'companies_path' => env('D365_COMPANIES_PATH', '/companies'),
+    'projects_path' => env('D365_PROJECTS_PATH', '/projects'),
+    'item_lookup_path' => env('D365_ITEM_LOOKUP_PATH', '/item-lookup'),
+    'project_lookup_path' => env('D365_PROJECT_LOOKUP_PATH', '/project-lookup'),
+    'item_issue_post_path' => env('D365_ITEM_ISSUE_POST_PATH', '/item-issue-post'),
+],
+
+'webapp' => [
+    'api_bearer_token' => env('WEBAPP_API_BEARER_TOKEN'),
+],
 ];

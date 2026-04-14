@@ -1,98 +1,271 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
     <title>Dashboard</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            background: #f3f2f1;
+            color: #323130;
+            min-height: 100vh;
+            display: flex;
         }
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
+        .sidebar {
+            width: 280px;
+            min-height: 100vh;
+            background: #fff;
+            border-right: 1px solid #edebe9;
+            padding: 16px 0;
+            flex-shrink: 0;
+        }
+        .sidebar-brand {
+            padding: 8px 16px 20px;
+            border-bottom: 1px solid #edebe9;
+            margin-bottom: 8px;
+        }
+        .sidebar-brand h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: #201f1e;
+        }
+        .nav-group { margin-bottom: 4px; }
+        .nav-group-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            margin: 0 8px;
+            border: none;
+            border-radius: 2px;
+            background: #deecf9;
+            color: #005a9e;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+        }
+        .nav-group-header:hover { background: #c7e0f4; }
+        .nav-group-header .nav-icon { flex-shrink: 0; opacity: 0.85; }
+        .nav-group-header .nav-label { flex: 1; }
+        .nav-group-header .chevron {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        .nav-group-header[aria-expanded="false"] .chevron {
+            transform: rotate(180deg);
+        }
+        .nav-group-body {
+            padding: 4px 0 8px 8px;
+        }
+        .nav-group-body[hidden] { display: none; }
+        .nav-link {
+            display: block;
+            padding: 8px 14px 8px 36px;
+            margin: 2px 8px;
+            border-radius: 2px;
+            color: #323130;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .nav-link:hover { background: #f3f2f1; color: #201f1e; }
+        .nav-link.active {
+            background: #deecf9;
+            color: #005a9e;
+            font-weight: 500;
+        }
+        .nav-subgroup { margin-top: 4px; }
+        .nav-subgroup-header {
+            width: calc(100% - 16px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px 8px 28px;
+            margin: 0 8px;
+            border: none;
+            border-radius: 2px;
+            background: #f3f2f1;
+            color: #605e5c;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+        }
+        .nav-subgroup-header:hover { background: #edebe9; }
+        .nav-subgroup-header .chevron-sm { font-size: 9px; transition: transform 0.2s; }
+        .nav-subgroup-header[aria-expanded="false"] .chevron-sm { transform: rotate(180deg); }
+        .nav-link.nested { padding-left: 44px; font-size: 13px; }
+        .nav-subgroup-body[hidden] { display: none; }
+        .main {
+            flex: 1;
+            padding: 24px 32px;
+            overflow: auto;
+        }
+        .main-header {
             margin-bottom: 20px;
         }
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+        .main-header h2 {
+            margin: 0 0 6px;
+            font-size: 1.5rem;
+            color: #201f1e;
         }
-        .menu-item {
-            background: white;
+        .info-card {
+            max-width: 480px;
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            text-align: center;
+            background: #fff;
+            border-radius: 2px;
+            box-shadow: none;
+            border: 1px solid #edebe9;
+        }
+        .info-card h3 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+            color: #201f1e;
+        }
+        .info-card p { margin: 8px 0; font-size: 14px; color: #605e5c; }
+        .logout-row { padding: 16px; margin-top: 8px; }
+        .logout-row form { margin: 0; }
+        .btn-logout {
+            background: transparent;
+            color: #605e5c;
+            border: 1px solid #8a8886;
+            padding: 8px 14px;
+            border-radius: 2px;
             cursor: pointer;
-            transition: 0.3s;
+            font-size: 13px;
+            font-family: inherit;
         }
-        .menu-item:hover {
-            background: #3498db;
-            color: white;
-            transform: translateY(-3px);
-        }
-        h3 {
-            color: #2c3e50;
-        }
+        .btn-logout:hover { background: #f3f2f1; color: #201f1e; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Dashboard</h1>
-        <p>Welcome to the Procurement System</p>
-    </div>
-    
-    <div class="menu-grid">
-        <div class="menu-item" onclick="window.location.href='/quotations'">
-            <h3>Quotation</h3>
-            <p>Manage quotations</p>
+    <aside class="sidebar" aria-label="Main navigation">
+        <div class="sidebar-brand">
+            <h1>MENU</h1>
         </div>
-        
-        <div class="menu-item" onclick="window.location.href='/purchase-requisitions'">
-            <h3>Purchase Requisition</h3>
-            <p>Create and track requisitions</p>
+
+        <nav>
+            <div class="nav-group">
+                <button type="button" class="nav-group-header" data-nav-target="nav-masters" aria-expanded="true">
+                    <span class="nav-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                    </span>
+                    <span class="nav-label">Masters</span>
+                    <span class="chevron" aria-hidden="true">▲</span>
+                </button>
+                <div class="nav-group-body" id="nav-masters">
+                    <a class="nav-link {{ request()->routeIs('masters.company.index') ? 'active' : '' }}" href="{{ route('masters.company.index') }}">Companies</a>
+                    <a class="nav-link {{ request()->routeIs('masters.categories.index') ? 'active' : '' }}" href="{{ route('masters.categories.index') }}">Categories</a>
+                    <a class="nav-link {{ request()->routeIs('masters.items.index') ? 'active' : '' }}" href="{{ route('masters.items.index') }}">Items</a>
+                    <a class="nav-link {{ request()->routeIs('masters.sizes.index') ? 'active' : '' }}" href="{{ route('masters.sizes.index') }}">Sizes</a>
+                    <a class="nav-link {{ request()->routeIs('masters.colors.index') ? 'active' : '' }}" href="{{ route('masters.colors.index') }}">Colors</a>
+                    <a class="nav-link {{ request()->routeIs('masters.styles.index') ? 'active' : '' }}" href="{{ route('masters.styles.index') }}">Styles</a>
+                    <a class="nav-link {{ request()->routeIs('masters.locations.index') ? 'active' : '' }}" href="{{ route('masters.locations.index') }}">Locations</a>
+                    <a class="nav-link {{ request()->routeIs('masters.sites.index') ? 'active' : '' }}" href="{{ route('masters.sites.index') }}">Sites</a>
+                    <a class="nav-link {{ request()->routeIs('masters.warehouses.index') ? 'active' : '' }}" href="{{ route('masters.warehouses.index') }}">Warehouses</a>
+                    <a class="nav-link {{ request()->routeIs('masters.currencies.index') ? 'active' : '' }}" href="{{ route('masters.currencies.index') }}">Currencies</a>
+                    <a class="nav-link {{ request()->routeIs('masters.units.index') ? 'active' : '' }}" href="{{ route('masters.units.index') }}">Units</a>
+                    <a class="nav-link {{ request()->routeIs('masters.pools.index') ? 'active' : '' }}" href="{{ route('masters.pools.index') }}">Pools</a>
+                    <a class="nav-link {{ request()->routeIs('masters.project.index') ? 'active' : '' }}" href="{{ route('masters.project.index') }}">Projects</a>
+                    <a class="nav-link {{ request()->routeIs('masters.batches.index') ? 'active' : '' }}" href="{{ route('masters.batches.index') }}">Batches</a>
+                    <a class="nav-link {{ request()->routeIs('masters.sales-tax-groups.index') ? 'active' : '' }}" href="{{ route('masters.sales-tax-groups.index') }}">Sales Tax Groups</a>
+                    <a class="nav-link {{ request()->routeIs('masters.item-sales-tax-groups.index') ? 'active' : '' }}" href="{{ route('masters.item-sales-tax-groups.index') }}">Item Sales Tax Groups</a>
+                    <a class="nav-link {{ request()->routeIs('masters.department-managers.index') ? 'active' : '' }}" href="{{ route('masters.department-managers.index') }}">Department Managers</a>
+                </div>
+            </div>
+
+            <div class="nav-group">
+                <button type="button" class="nav-group-header" data-nav-target="nav-modules" aria-expanded="true">
+                    <span class="nav-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="nav-label">Modules</span>
+                    <span class="chevron" aria-hidden="true">▲</span>
+                </button>
+                <div class="nav-group-body" id="nav-modules">
+                    <div class="nav-subgroup">
+                        <button type="button" class="nav-subgroup-header" data-nav-target="nav-pm" aria-expanded="true">
+                            Project Management
+                            <span class="chevron-sm" aria-hidden="true">▲</span>
+                        </button>
+                        <div class="nav-subgroup-body" id="nav-pm">
+                            <a class="nav-link nested {{ request()->routeIs('modules.project-management.item-issue') ? 'active' : '' }}" href="{{ route('modules.project-management.item-issue') }}">Item Issue</a>
+                        </div>
+                    </div>
+                    <div class="nav-subgroup">
+                        <button type="button" class="nav-subgroup-header" data-nav-target="nav-procurement" aria-expanded="true">
+                            Procurement
+                            <span class="chevron-sm" aria-hidden="true">▲</span>
+                        </button>
+                        <div class="nav-subgroup-body" id="nav-procurement">
+                            <a class="nav-link nested {{ request()->routeIs('quotations.*') ? 'active' : '' }}" href="{{ route('quotations.index') }}">Quotation</a>
+                            <a class="nav-link nested {{ request()->routeIs('purchase-requisitions.*') ? 'active' : '' }}" href="{{ route('purchase-requisitions.index') }}">Purchase Requisition</a>
+                            <a class="nav-link nested {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}" href="{{ route('purchase-orders.index') }}">Purchase Order</a>
+                            <a class="nav-link nested {{ request()->routeIs('grns.*') ? 'active' : '' }}" href="{{ route('grns.index') }}">Goods Receive Note</a>
+                            <a class="nav-link nested {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index') }}">Inventory</a>
+                            <a class="nav-link nested {{ request()->routeIs('vendors.*') ? 'active' : '' }}" href="{{ route('vendors.index') }}">Vendors</a>
+                            <a class="nav-link nested {{ request()->routeIs('customers.*') ? 'active' : '' }}" href="{{ route('customers.index') }}">Customers</a>
+                            <a class="nav-link nested {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Reports</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="logout-row">
+            <form method="post" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn-logout">Log out</button>
+            </form>
         </div>
-        
-        <div class="menu-item" onclick="window.location.href='/purchase-orders'">
-            <h3>Purchase Order</h3>
-            <p>Manage purchase orders</p>
+    </aside>
+
+    <main class="main">
+        <div class="main-header">
+            <h2>Dashboard</h2>
+          
         </div>
-        
-        <div class="menu-item" onclick="window.location.href='/grns'">
-            <h3>Goods Receive Note</h3>
-            <p>Record received goods</p>
+
+        <div class="info-card">
+            <h3>User Details</h3>
+            <p><strong>Name:</strong> {{ auth()->user()->name }}</p>
+            <p><strong>Email:</strong> {{ auth()->user()->email }}</p>
+            <p><strong>User ID:</strong> {{ auth()->user()->id }}</p>
         </div>
-        
-        <div class="menu-item" onclick="window.location.href='/inventory'">
-            <h3>Inventory</h3>
-            <p>Manage inventory items</p>
-        </div>
-        
-        <div class="menu-item" onclick="window.location.href='/vendors'">
-            <h3>Vendors/Suppliers</h3>
-            <p>Manage vendor information</p>
-        </div>
-        
-        <div class="menu-item" onclick="window.location.href='/customers'">
-            <h3>Customers</h3>
-            <p>Manage customer information</p>
-        </div>
-        
-        <div class="menu-item" onclick="window.location.href='/reports'">
-            <h3>Reports</h3>
-            <p>View reports and analytics</p>
-        </div>
-    </div>
-    
-    <div style="margin-top: 30px; padding: 15px; background: white; border-radius: 5px;">
-        <p><strong>Quick Stats:</strong></p>
-        <p>Pending Quotations: 12</p>
-        <p>Open Requisitions: 8</p>
-        <p>Active Orders: 5</p>
-        <p>Pending GRNs: 3</p>
-    </div>
+    </main>
+
+    <script>
+        document.querySelectorAll('.nav-group-header[data-nav-target]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-nav-target');
+                var body = document.getElementById(id);
+                if (!body) return;
+                var open = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                body.hidden = open;
+            });
+        });
+        document.querySelectorAll('.nav-subgroup-header[data-nav-target]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-nav-target');
+                var body = document.getElementById(id);
+                if (!body) return;
+                var open = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                body.hidden = open;
+            });
+        });
+    </script>
 </body>
 </html>
