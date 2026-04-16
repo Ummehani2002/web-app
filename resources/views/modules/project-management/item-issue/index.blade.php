@@ -161,6 +161,11 @@
             gap: 12px;
             margin-bottom: 14px;
         }
+        .journal-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         .journal-title {
             margin: 0;
             font-size: 36px;
@@ -214,13 +219,9 @@
             background: #fde7e9;
             color: #a4262c;
         }
-        .lines-search {
-            width: 320px;
-            max-width: 100%;
-            border: 1px solid #8a8886;
-            border-radius: 2px;
-            padding: 7px 10px;
-            font-size: 13px;
+        .lines-toolbar {
+            display: flex;
+            justify-content: flex-end;
             margin-bottom: 10px;
         }
         .line-area {
@@ -293,11 +294,12 @@
 
         <div id="journal-form-view" class="journal-form hidden">
             <div class="journal-header">
-                <h2 class="journal-title">Journal</h2>
-                <div class="journal-actions">
+                <div class="journal-left">
                     <button id="back-to-list-btn" class="btn" type="button">Back</button>
+                    <h2 class="journal-title">Journal</h2>
+                </div>
+                <div class="journal-actions">
                     <button id="post-journal-btn" class="btn btn-primary" type="button">Post</button>
-                    <button id="new-line-btn" class="btn btn-light" type="button" disabled>New Line</button>
                 </div>
             </div>
             <div id="status-box" class="status-box"></div>
@@ -329,7 +331,9 @@
             <input id="invent-site-id" type="hidden" value="PIE20241004">
             <input id="invent-location-id" type="hidden" value="PIE20241004">
 
-            <input class="lines-search" type="text" placeholder="Search journal lines..." disabled>
+            <div class="lines-toolbar">
+                <button id="new-line-btn" class="btn btn-light" type="button" disabled>New Line</button>
+            </div>
             <datalist id="item-options"></datalist>
 
             <div class="line-area" style="overflow:auto;">
