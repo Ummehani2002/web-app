@@ -311,12 +311,12 @@
                 </div>
                 <div class="field">
                     <label>Project</label>
-                    <input id="project-id" type="text" list="project-options" placeholder="Select a project...">
-                    <datalist id="project-options">
+                    <select id="project-id">
+                        <option value="">Select a project...</option>
                         @foreach($projects as $project)
-                            <option value="{{ $project->d365_id }} - {{ $project->name }}"></option>
+                            <option value="{{ $project->d365_id }}">{{ $project->d365_id }} - {{ $project->name }}</option>
                         @endforeach
-                    </datalist>
+                    </select>
                 </div>
                 <div class="field">
                     <label>Accounting Date</label>
@@ -406,7 +406,7 @@
         const extractIdFromProjectInput = () => {
             const value = document.getElementById('project-id').value.trim();
             if (!value) return '';
-            return value.split(' - ')[0].trim();
+            return value;
         };
 
         const createLineRow = (defaults = {}) => {
@@ -437,6 +437,7 @@
 
         const resetForm = () => {
             document.getElementById('journal-id').value = 'Not Yet Posted';
+            document.getElementById('project-id').value = '';
             document.getElementById('request-id').value = generateRequestId();
             document.getElementById('description').value = 'Issue of items for project';
             linesBody.innerHTML = '<tr><td class="empty-note" colspan="4">No journal items found</td></tr>';
@@ -538,6 +539,7 @@
             }
         };
 
+        projectInput.addEventListener('change', toggleNewLineButton);
         projectInput.addEventListener('input', toggleNewLineButton);
         setAccountingDate();
         loadItemOptions();
