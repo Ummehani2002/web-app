@@ -72,6 +72,7 @@ class SettingsController extends Controller
             }
 
             $expiresIn = (int) $response->json('expires_in', 0);
+            $accessToken = (string) $response->json('access_token', '');
             if ($expiresIn <= 0) {
                 return response()->json([
                     'status' => false,
@@ -80,10 +81,20 @@ class SettingsController extends Controller
                 ], 502);
             }
 
+            if ($accessToken === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'D365 token response missing access_token.',
+                    'checked_at' => now()->toIso8601String(),
+                ], 502);
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'D365 connection is healthy. Token fetched successfully.',
+                'access_token' => $accessToken,
                 'expires_in' => $expiresIn,
+                'expires_at' => now()->addSeconds($expiresIn)->toIso8601String(),
                 'checked_at' => now()->toIso8601String(),
             ]);
         } catch (Throwable $e) {

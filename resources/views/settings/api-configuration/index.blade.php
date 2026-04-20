@@ -131,6 +131,13 @@
             border-radius: 2px;
             padding: 8px;
         }
+        .token-output-wrap {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
         .btn {
             border: 1px solid #8a8886;
             background: #fff;
@@ -219,6 +226,10 @@
         <h3 style="margin: 0 0 10px; font-size: 15px;">D365 API (Outgoing: Web App -> D365)</h3>
         <button id="check-d365-btn" class="btn btn-primary" type="button">Check D365 token connection</button>
         <p id="d365-status" class="help">Click to verify D365 token generation and connectivity.</p>
+        <div class="token-output-wrap">
+            <input id="d365-token-output" class="token-output" type="text" placeholder="D365 access token appears here after check" readonly>
+            <button id="copy-d365-token-btn" class="btn" type="button">Copy D365 token</button>
+        </div>
     </div>
 </main>
 <script>
@@ -251,6 +262,8 @@
     const tokenCountdown = document.getElementById('token-countdown');
     const checkD365Btn = document.getElementById('check-d365-btn');
     const d365Status = document.getElementById('d365-status');
+    const d365TokenOutput = document.getElementById('d365-token-output');
+    const copyD365TokenBtn = document.getElementById('copy-d365-token-btn');
     let countdownTimer = null;
 
     const clearCountdown = () => {
@@ -341,6 +354,7 @@
     checkD365Btn.addEventListener('click', async () => {
         d365Status.textContent = 'Checking D365 connection...';
         d365Status.classList.remove('warn');
+        d365TokenOutput.value = '';
         try {
             const response = await fetch("{{ route('settings.api-configuration.check-d365') }}", {
                 method: 'POST',
@@ -358,8 +372,27 @@
             const checkedAt = payload.checked_at ? new Date(payload.checked_at).toLocaleString() : 'now';
             const ttl = payload.expires_in ? `${payload.expires_in} seconds` : 'unknown TTL';
             d365Status.textContent = `Healthy. Token endpoint responded at ${checkedAt}. Token TTL: ${ttl}.`;
+            d365TokenOutput.value = payload.access_token || '';
         } catch (error) {
             d365Status.textContent = error.message;
+            d365Status.classList.add('warn');
+        }
+    });
+
+    copyD365TokenBtn.addEventListener('click', async () => {
+        const value = d365TokenOutput.value.trim();
+        if (!value) {
+            d365Status.textContent = 'Check D365 token connection first.';
+            d365Status.classList.add('warn');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(value);
+            d365Status.textContent = 'D365 access token copied to clipboard.';
+            d365Status.classList.remove('warn');
+        } catch (error) {
+            d365Status.textContent = 'Copy failed. Please copy manually.';
             d365Status.classList.add('warn');
         }
     });
