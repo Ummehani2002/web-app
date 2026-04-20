@@ -93,12 +93,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/modules/project-management/item-issue/api/post', [ItemIssueController::class, 'post'])
         ->name('modules.project-management.item-issue.api.post');
 
-    Route::get('/settings/api-configuration', [SettingsController::class, 'apiConfiguration'])
-        ->name('settings.api-configuration');
-    Route::post('/settings/api-configuration/generate-token', [SettingsController::class, 'generateApiToken'])
-        ->name('settings.api-configuration.generate-token');
-    Route::post('/settings/api-configuration/check-d365', [SettingsController::class, 'checkD365Connection'])
-        ->name('settings.api-configuration.check-d365');
+    // Settings
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/token/generate', [SettingsController::class, 'generateToken'])->name('settings.token.generate');
 
     // Laravel expects /home after login, so redirect it to dashboard
     Route::get('/home', function () {

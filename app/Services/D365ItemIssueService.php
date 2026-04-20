@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\D365Token;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -62,7 +63,21 @@ class D365ItemIssueService
         return is_array($json) ? $json : ['raw' => $response->body()];
     }
 
-    protected function getAccessToken(): string
+    public function getAccessToken(): string
+    {
+        $cached = D365Token::current();
+
+        if ($cached) {
+            return $cached->access_token;
+        }
+
+        return $this->fetchAndStoreToken();
+    }
+
+    /**
+     * Fetches a fresh token from Azure AD, saves it in the DB, and returns it.
+     */
+    public function fetchAndStoreToken(string $generatedBy = 'system'): string
     {
         $tenantId = (string) config('services.d365.tenant_id');
         $clientId = (string) config('services.d365.client_id');
@@ -70,7 +85,7 @@ class D365ItemIssueService
         $scope = (string) config('services.d365.scope');
 
         if (!$tenantId || !$clientId || !$clientSecret || !$scope) {
-            throw new RuntimeException('D365 credentials are not fully configured.');
+            throw new RuntimeException('D365 credentials are not fully configured in .env');
         }
 
         $tokenUrl = "https://login.microsoftonline.com/{$tenantId}/oauth2/v2.0/token";
@@ -83,14 +98,21 @@ class D365ItemIssueService
         ]);
 
         if ($response->failed()) {
-            throw new RuntimeException('Failed to get Azure access token: ' . $response->status());
+            throw new RuntimeException('Failed to get Azure access token: ' . $response->status() . ' - ' . $response->body());
         }
 
         $accessToken = $response->json('access_token');
+        $expiresIn = (int) ($response->json('expires_in') ?? 3599);
 
         if (!$accessToken) {
             throw new RuntimeException('Azure token response did not include access_token.');
         }
+
+        D365Token::create([
+            'access_token' => $accessToken,
+            'expires_at' => now()->addSeconds($expiresIn),
+            'generated_by' => $generatedBy,
+        ]);
 
         return $accessToken;
     }

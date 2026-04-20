@@ -233,7 +233,7 @@
                     <span class="chevron" aria-hidden="true">▲</span>
                 </button>
                 <div class="nav-group-body" id="nav-settings">
-                    <a class="nav-link {{ request()->routeIs('settings.api-configuration') ? 'active' : '' }}" href="{{ route('settings.api-configuration') }}">API Configuration</a>
+                    <a class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}" href="{{ route('settings.index') }}">API Configuration</a>
                 </div>
             </div>
         </nav>

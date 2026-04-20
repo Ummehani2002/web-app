@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\ServeCommand;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 
@@ -12,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Replace default serve command with Windows-safe custom command.
+        $this->app->extend('command.serve', fn () => $this->app->make(ServeCommand::class));
     }
 
     /**

@@ -524,9 +524,9 @@
         const loadItemOptions = async () => {
             clearStatus();
             try {
-                const dataAreaId = document.getElementById('item-data-area').value.trim();
+                const company = document.getElementById('item-data-area').value.trim();
                 const payload = await callPostJson(endpoints.itemLookup, {
-                    DataAreaId: dataAreaId,
+                    company,
                     ItemId: '',
                 });
 
@@ -553,15 +553,14 @@
         postBtn.addEventListener('click', async () => {
             clearStatus();
             try {
-                const requestId = document.getElementById('request-id').value.trim();
                 const description = document.getElementById('description').value.trim();
-                const dataAreaId = document.getElementById('post-data-area').value.trim();
+                const company = document.getElementById('post-data-area').value.trim();
                 const inventSiteId = document.getElementById('invent-site-id').value.trim();
                 const inventLocationId = document.getElementById('invent-location-id').value.trim();
                 const projectId = extractIdFromProjectInput();
 
-                if (!requestId || !description || !dataAreaId || !inventSiteId || !inventLocationId || !projectId) {
-                    throw new Error('Please fill request/header fields and select a valid project before posting.');
+                if (!company || !description || !inventSiteId || !inventLocationId || !projectId) {
+                    throw new Error('Please fill required fields and select a valid project before posting.');
                 }
 
                 const lineRows = Array.from(linesBody.querySelectorAll('tr')).filter((tr) => !tr.querySelector('.empty-note'));
@@ -574,46 +573,36 @@
                     const itemIdRaw = getVal('.line-item-id');
                     const itemId = itemIdRaw.split(' - ')[0].trim();
                     const qty = Number(getVal('.line-qty'));
-                    const price = 0;
-                    const priceUnit = 1;
-
-                    if (!itemId || !qty || !priceUnit) {
-                        throw new Error(`Line ${index + 1}: item, qty and price unit are required.`);
+                    if (!itemId || !qty) {
+                        throw new Error(`Line ${index + 1}: item and qty are required.`);
                     }
 
                     return {
-                        RequestId: requestId,
-                        InventSiteId: inventSiteId,
-                        InventLocationId: inventLocationId,
-                        ProjId: projectId,
-                        ProjCategoryId: 'Material',
-                        ItemId: itemId,
-                        ProjSalesCurrencyId: 'AED',
-                        ProjSalesPrice: Number.isFinite(price) ? price : 0,
-                        ProjUnitID: getVal('.line-unit'),
-                        ProjTaxGroupId: 'C-DXB',
-                        ProjTaxItemGroupId: '',
-                        Qty: qty,
-                        PriceUnit: priceUnit,
-                        LineNum: index + 1,
-                        wMSLocationId: 'Default',
-                        InventSizeId: '',
-                        InventSerialId: '',
-                        InventStyleId: '',
+                        project_id: projectId,
+                        item_id: itemId,
+                        category: 'Material',
+                        currency: 'AED',
+                        sales_price: 0,
+                        unit: getVal('.line-unit') || 'NOS',
+                        tax_group: 'C-DXB',
+                        tax_item_group: '',
+                        qty: qty,
+                        price_unit: 1,
+                        line_num: index + 1,
+                        wms_location: 'Default',
                     };
                 });
 
                 const payload = await callPostJson(endpoints.post, {
-                    DataAreaId: dataAreaId,
-                    ItemIssueHeader: {
-                        RequestId: requestId,
-                        Description: description,
-                        InventSiteId: inventSiteId,
-                        InventLocationId: inventLocationId,
-                    },
-                    ItemIssueLines: lines,
+                    company,
+                    project_id: projectId,
+                    description,
+                    invent_site_id: inventSiteId,
+                    invent_location_id: inventLocationId,
+                    lines,
                 });
 
+                const requestId = payload.request_id || '';
                 const journalId = payload.journal_id || '';
                 document.getElementById('journal-id').value = journalId;
                 showStatus(journalId
