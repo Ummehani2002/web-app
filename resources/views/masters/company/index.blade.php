@@ -106,7 +106,7 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>D365 ID</th>
+                    <th>D365CCCC ID</th>
                     <th>Name</th>
                     <th>Created At</th>
                     <th>Action</th>
