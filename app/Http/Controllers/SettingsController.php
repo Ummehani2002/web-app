@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Throwable;
 
 class SettingsController extends Controller
 {
@@ -31,5 +33,67 @@ class SettingsController extends Controller
             'token' => $plainToken,
             'expires_at' => $expiresAt->toIso8601String(),
         ]);
+    }
+
+    public function checkD365Connection()
+    {
+        $tenantId = (string) config('services.d365.tenant_id');
+        $clientId = (string) config('services.d365.client_id');
+        $clientSecret = (string) config('services.d365.client_secret');
+        $scope = (string) config('services.d365.scope');
+
+        if ($tenantId === '' || $clientId === '' || $clientSecret === '' || $scope === '') {
+            return response()->json([
+                'status' => false,
+                'message' => 'D365 credentials are incomplete in environment settings.',
+                'checked_at' => now()->toIso8601String(),
+            ], 422);
+        }
+
+        $tokenUrl = "https://login.microsoftonline.com/{$tenantId}/oauth2/v2.0/token";
+
+        try {
+            $response = Http::asForm()
+                ->timeout(20)
+                ->post($tokenUrl, [
+                    'grant_type' => 'client_credentials',
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                    'scope' => $scope,
+                ]);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'D365 token request failed.',
+                    'http_status' => $response->status(),
+                    'checked_at' => now()->toIso8601String(),
+                ], 502);
+            }
+
+            $expiresIn = (int) $response->json('expires_in', 0);
+            if ($expiresIn <= 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'D365 token response missing expires_in.',
+                    'checked_at' => now()->toIso8601String(),
+                ], 502);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'D365 connection is healthy. Token fetched successfully.',
+                'expires_in' => $expiresIn,
+                'checked_at' => now()->toIso8601String(),
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'D365 connection check failed: ' . $e->getMessage(),
+                'checked_at' => now()->toIso8601String(),
+            ], 500);
+        }
     }
 }

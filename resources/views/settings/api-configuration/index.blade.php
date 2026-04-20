@@ -115,6 +115,7 @@
             border: 1px solid #edebe9;
             border-radius: 2px;
             padding: 16px;
+            margin-bottom: 12px;
         }
         .token-row {
             display: grid;
@@ -205,6 +206,7 @@
 <main class="main">
     <div class="card">
         <h2 style="margin-top:0;">API Configuration</h2>
+        <h3 style="margin: 0 0 10px; font-size: 15px;">Web App API (Incoming: D365/Postman -> Web App)</h3>
         <div class="token-row">
             <button id="generate-token-btn" class="btn btn-primary" type="button">Generate 1-hour token</button>
             <input id="generated-token" class="token-output" type="text" placeholder="Click generate token" readonly>
@@ -212,6 +214,11 @@
         </div>
         <p id="token-status" class="help">Use this token in Postman: Authorization -> Bearer Token.</p>
         <p id="token-countdown" class="help">Token not generated yet.</p>
+    </div>
+    <div class="card">
+        <h3 style="margin: 0 0 10px; font-size: 15px;">D365 API (Outgoing: Web App -> D365)</h3>
+        <button id="check-d365-btn" class="btn btn-primary" type="button">Check D365 token connection</button>
+        <p id="d365-status" class="help">Click to verify D365 token generation and connectivity.</p>
     </div>
 </main>
 <script>
@@ -242,6 +249,8 @@
     const generatedTokenInput = document.getElementById('generated-token');
     const tokenStatus = document.getElementById('token-status');
     const tokenCountdown = document.getElementById('token-countdown');
+    const checkD365Btn = document.getElementById('check-d365-btn');
+    const d365Status = document.getElementById('d365-status');
     let countdownTimer = null;
 
     const clearCountdown = () => {
@@ -326,6 +335,32 @@
             tokenStatus.textContent = 'Token copied to clipboard.';
         } catch (error) {
             tokenStatus.textContent = 'Copy failed. Please copy manually.';
+        }
+    });
+
+    checkD365Btn.addEventListener('click', async () => {
+        d365Status.textContent = 'Checking D365 connection...';
+        d365Status.classList.remove('warn');
+        try {
+            const response = await fetch("{{ route('settings.api-configuration.check-d365') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    Accept: 'application/json',
+                },
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload?.status !== true) {
+                throw new Error(payload?.message || 'D365 connection check failed.');
+            }
+
+            const checkedAt = payload.checked_at ? new Date(payload.checked_at).toLocaleString() : 'now';
+            const ttl = payload.expires_in ? `${payload.expires_in} seconds` : 'unknown TTL';
+            d365Status.textContent = `Healthy. Token endpoint responded at ${checkedAt}. Token TTL: ${ttl}.`;
+        } catch (error) {
+            d365Status.textContent = error.message;
+            d365Status.classList.add('warn');
         }
     });
 </script>

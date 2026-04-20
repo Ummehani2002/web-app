@@ -97,6 +97,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('settings.api-configuration');
     Route::post('/settings/api-configuration/generate-token', [SettingsController::class, 'generateApiToken'])
         ->name('settings.api-configuration.generate-token');
+    Route::post('/settings/api-configuration/check-d365', [SettingsController::class, 'checkD365Connection'])
+        ->name('settings.api-configuration.check-d365');
 
     // Laravel expects /home after login, so redirect it to dashboard
     Route::get('/home', function () {
