@@ -261,11 +261,6 @@
         };
         const clearStatus = () => { statusBox.textContent = ''; statusBox.className = 'status-box'; };
  
-        const pad = (n) => String(n).padStart(2, '0');
-        const generateRequestId = () => {
-            const d = new Date();
-            return `REQ${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-        };
         const setAccountingDate = () => {
             document.getElementById('accounting-date').value =
                 new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
@@ -426,7 +421,7 @@
         /* ── Reset form ───────────────────────────────────────────────── */
         const resetForm = () => {
             document.getElementById('journal-id').value        = 'Not Yet Posted';
-            document.getElementById('request-id').value        = generateRequestId();
+            document.getElementById('request-id').value        = '';
             document.getElementById('invent-site-id').value    = '';
             document.getElementById('invent-location-id').value = '';
             document.getElementById('tax-group-id').value      = 'C-DXB';
@@ -516,7 +511,7 @@
         postBtn.addEventListener('click', async () => {
             clearStatus();
             try {
-                const requestId        = document.getElementById('request-id').value.trim();
+                const requestIdDraft   = document.getElementById('request-id').value.trim();
                 const description      = document.getElementById('description').value.trim();
                 const company          = companySelect.value.trim();
                 const projectId        = projectSelect.value.trim();
@@ -575,6 +570,7 @@
                     ? `✅ Posted successfully. D365 Journal ID: ${journalId}`
                     : '✅ Posted successfully. No journal ID returned yet.');
  
+                const requestId = payload.request_id || requestIdDraft;
                 addJournalToGrid({ requestId, journalId, company, projectId, lineCount: lines.length });
  
             } catch (err) {
@@ -586,7 +582,7 @@
         });
  
         /* ── Init ─────────────────────────────────────────────────────── */
-        document.getElementById('request-id').value = generateRequestId();
+        document.getElementById('request-id').value = '';
  
     </script>
  

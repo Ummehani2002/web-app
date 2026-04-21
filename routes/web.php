@@ -33,7 +33,8 @@ Route::get('/login', function () {
 Route::get('/auth/microsoft', [MicrosoftOAuthController::class, 'redirectToMicrosoft'])
     ->name('auth.microsoft');
 
-Route::get('/auth/microsoft/callback', [MicrosoftOAuthController::class, 'handleMicrosoftCallback']);
+Route::get('/auth/microsoft/callback', [MicrosoftOAuthController::class, 'handleMicrosoftCallback'])
+    ->name('auth.microsoft.callback');
 
 // Logout
 Route::post('/logout', [MicrosoftOAuthController::class, 'logout'])

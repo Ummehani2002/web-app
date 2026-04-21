@@ -400,7 +400,21 @@ class ItemIssueController extends Controller
  
     private function generateRequestId(): string
     {
-        return 'REQ' . now()->format('YmdHis');
+        $year = now()->format('Y');
+        $prefix = "IS{$year}";
+
+        $latestRequestId = ItemIssueJournal::query()
+            ->where('request_id', 'like', $prefix . '%')
+            ->orderByDesc('request_id')
+            ->value('request_id');
+
+        $nextSequence = 1;
+
+        if (is_string($latestRequestId) && preg_match('/^' . preg_quote($prefix, '/') . '(\d{4})$/', $latestRequestId, $matches)) {
+            $nextSequence = ((int) $matches[1]) + 1;
+        }
+
+        return sprintf('%s%04d', $prefix, $nextSequence);
     }
 }
  
