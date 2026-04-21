@@ -53,11 +53,15 @@ Route::middleware(['auth'])->group(function () {
         ->name('masters.company.index');
     Route::post('/masters/company', [CompanyMasterController::class, 'store'])
         ->name('masters.company.store');
+    Route::post('/masters/company/quick-add', [CompanyMasterController::class, 'quickStore'])
+        ->name('masters.company.quick-add');
     Route::post('/masters/company/sync-d365', [CompanyMasterController::class, 'syncFromD365'])
         ->name('masters.company.sync');
 
     Route::get('/masters/project', [ProjectMasterController::class, 'index'])
         ->name('masters.project.index');
+    Route::post('/masters/project/quick-add', [ProjectMasterController::class, 'quickStore'])
+        ->name('masters.project.quick-add');
     Route::post('/masters/project/sync-d365', [ProjectMasterController::class, 'syncFromD365'])
         ->name('masters.project.sync');
 
@@ -90,15 +94,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('modules.project-management.item-issue.api.items.lookup');
     Route::post('/modules/project-management/item-issue/api/projects/lookup', [ItemIssueController::class, 'lookupProjects'])
         ->name('modules.project-management.item-issue.api.projects.lookup');
-    Route::post('/modules/project-management/item-issue/api/onhand/lookup', [ItemIssueController::class, 'lookupOnHand'])
-        ->name('modules.project-management.item-issue.api.onhand.lookup');
-    Route::post('/modules/project-management/item-issue/api/units/lookup', [ItemIssueController::class, 'lookupUnits'])
-        ->name('modules.project-management.item-issue.api.units');
     Route::post('/modules/project-management/item-issue/api/post', [ItemIssueController::class, 'post'])
         ->name('modules.project-management.item-issue.api.post');
+    Route::post('/modules/project-management/item-issue/api/onhand', [ItemIssueController::class, 'lookupOnHand'])
+        ->name('modules.project-management.item-issue.api.onhand');
+    Route::post('/modules/project-management/item-issue/api/units', [ItemIssueController::class, 'lookupUnits'])
+        ->name('modules.project-management.item-issue.api.units');
 
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/token/generate', [SettingsController::class, 'generateToken'])->name('settings.token.generate');
 
     // Laravel expects /home after login, so redirect it to dashboard
     Route::get('/home', function () {
