@@ -71,6 +71,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('masters.project.sync');
     Route::get('/masters/items', [ItemMasterController::class, 'index'])
         ->name('masters.items.index');
+    Route::post('/masters/items', [ItemMasterController::class, 'store'])
+        ->name('masters.items.store');
 
     $masterStubs = [
         'categories' => 'Categories',

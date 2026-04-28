@@ -16,7 +16,13 @@
         .main { flex: 1; padding: 16px; overflow: auto; }
         .header { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px 16px; margin-bottom: 12px; }
         .header h1 { margin: 0; font-size: 38px; color: #0f2b56; font-weight: 700; }
-        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px; }
+        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px; margin-bottom: 12px; }
+        .form-row { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+        .form-row label { display: block; font-size: 12px; color: #605e5c; font-weight: 600; margin-bottom: 4px; }
+        .form-row input { width: 100%; padding: 8px; border: 1px solid #8a8886; border-radius: 2px; }
+        .btn { background: #106ebe; color: #fff; border: 1px solid #106ebe; padding: 8px 12px; border-radius: 2px; cursor: pointer; }
+        .status { background: #e8f6ee; color: #1f7a48; padding: 10px; border-radius: 2px; margin-bottom: 10px; }
+        .error { background: #fde7e9; color: #a4262c; padding: 10px; border-radius: 2px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; border-bottom: 1px solid #edebe9; padding: 10px 8px; }
         th { color: #605e5c; background: #faf9f8; font-weight: 600; }
@@ -48,6 +54,37 @@
     <main class="main">
         <div class="header">
             <h1>Items</h1>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0;">Create / Update Item</h2>
+            @if(session('status'))
+                <div class="status">{{ session('status') }}</div>
+            @endif
+            @if($errors->any())
+                <div class="error">{{ $errors->first() }}</div>
+            @endif
+            <form method="post" action="{{ route('masters.items.store', $companyQuery) }}">
+                @csrf
+                <div class="form-row">
+                    <div>
+                        <label for="d365_item_id">D365 Item ID</label>
+                        <input id="d365_item_id" name="d365_item_id" value="{{ old('d365_item_id') }}" required maxlength="50">
+                    </div>
+                    <div>
+                        <label for="item_name">Item Name</label>
+                        <input id="item_name" name="item_name" value="{{ old('item_name') }}" required maxlength="255">
+                    </div>
+                    <div>
+                        <label for="type">Type</label>
+                        <input id="type" name="type" value="{{ old('type') }}" maxlength="50">
+                    </div>
+                    <div>
+                        <label for="item_category_id">Item Category</label>
+                        <input id="item_category_id" name="item_category_id" value="{{ old('item_category_id') }}" maxlength="255">
+                    </div>
+                </div>
+                <button class="btn" type="submit">Save Item</button>
+            </form>
         </div>
         <div class="card">
             <table>

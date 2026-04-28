@@ -11,7 +11,7 @@ Route::middleware('api.bearer')->group(function () {
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::apiResource('/companies', CompanyController::class);
     Route::apiResource('/projects', ProjectController::class);
-    Route::post('/items/sync-d365', [ItemSyncController::class, 'store']);
+    Route::post('/items', [ItemSyncController::class, 'store']);
     Route::post('/item-issue/items/lookup', [ItemIssueController::class, 'lookupItems'])
         ->name('api.item-issue.items.lookup');
     Route::post('/item-issue/projects/lookup', [ItemIssueController::class, 'lookupProjects'])
