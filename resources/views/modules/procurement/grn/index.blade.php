@@ -15,11 +15,11 @@
         .menu-link.active { background: #deecf9; color: #005a9e; }
         .sub { margin-left: 16px; padding-left: 8px; border-left: 2px solid #edebe9; }
         .main { flex: 1; padding: 12px 16px; overflow: auto; }
-        .card { background: #fff; border: 1px solid #edebe9; border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
-        .card-head { padding: 14px 16px; border-bottom: 1px solid #edebe9; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .title { margin: 0; font-size: 30px; font-weight: 700; }
+        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+        .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .title { margin: 0; font-size: 24px; font-weight: 600; }
         .subtitle { margin: 2px 0 0; font-size: 13px; color: #605e5c; }
-        .btn { border: 1px solid #8a8886; background: #fff; color: #323130; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; }
+        .btn { border: 1px solid #8a8886; background: #fff; color: #323130; border-radius: 2px; padding: 7px 12px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; }
         .btn-primary { border-color: #4f6bed; background: #4f6bed; color: #fff; }
         .body { padding: 14px 16px; }
         .toolbar { margin-bottom: 10px; display: flex; justify-content: flex-start; gap: 8px; }
@@ -32,9 +32,12 @@
         .empty { text-align: center; color: #8a8886; padding: 24px 10px; }
         .badge { background: #e7f7ed; color: #0b6a3e; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
         .hidden { display: none !important; }
-        .status { margin-bottom: 10px; padding: 10px 12px; border-radius: 8px; display: none; }
+        .status { margin-bottom: 10px; padding: 8px 10px; border-radius: 2px; display: none; }
         .status.error { display: block; background: #fde7e9; color: #a4262c; }
         .status.success { display: block; background: #e7f7ed; color: #0b6a3e; }
+        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .form-header-left, .form-header-right { display: flex; align-items: center; gap: 8px; }
+        .form-title { margin: 0; font-size: 22px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -105,14 +108,17 @@
         </section>
 
         <section id="search-card" class="card hidden">
-            <div class="card-head">
-                <div>
-                    <h2 style="margin:0;font-size:24px;">Purchase Orders</h2>
-                    <p class="subtitle">Fill any one, two, or all fields and search.</p>
-                </div>
-                <button id="back-to-index-btn" class="btn" type="button">Back</button>
-            </div>
             <div class="body">
+                <div class="form-header">
+                    <div class="form-header-left">
+                        <button id="back-to-index-btn" class="btn" type="button">← Back</button>
+                        <h2 class="form-title">Purchase Orders</h2>
+                    </div>
+                    <div class="form-header-right">
+                        <button id="search-btn" type="button" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+                <p class="subtitle" style="margin:0 0 12px;">Fill any one, two, or all fields and search.</p>
                 <div class="filters">
                     <div class="field">
                         <label>Purch ID</label>
@@ -125,9 +131,6 @@
                     <div class="field">
                         <label>Project ID</label>
                         <input id="search-project-id" type="text" placeholder="PIE20241002">
-                    </div>
-                    <div class="field" style="display:flex; align-items:flex-end;">
-                        <button id="search-btn" type="button" class="btn btn-primary">Search</button>
                     </div>
                 </div>
                 <table>
@@ -148,9 +151,13 @@
         </section>
 
         <section id="detail-card" class="hidden">
-            <div class="toolbar" style="margin-bottom:12px;">
-                <button id="post-btn" type="button" class="btn btn-primary">Post</button>
-                <button id="back-to-search-btn" type="button" class="btn">Back</button>
+            <div class="form-header" style="margin-bottom:12px;">
+                <div class="form-header-left">
+                    <button id="back-to-search-btn" type="button" class="btn">← Back</button>
+                </div>
+                <div class="form-header-right">
+                    <button id="post-btn" type="button" class="btn btn-primary">Post</button>
+                </div>
             </div>
 
             <div class="card">
