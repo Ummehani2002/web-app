@@ -36,6 +36,9 @@
         .form-wrap { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px; }
         .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
         .form-header-left, .form-header-right { display: flex; align-items: center; gap: 8px; }
+        @media (min-width: 1024px) {
+            .form-header-right { margin-right: 20px; }
+        }
         .form-title { margin: 0; font-size: 22px; font-weight: 600; }
         .fields { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
         .field label { display: block; font-size: 12px; margin-bottom: 4px; color: #605e5c; font-weight: 500; }

@@ -37,16 +37,6 @@
         height: 30px;
     }
 
-    /* Reserve room so fixed selector doesn't cover page actions */
-    @media (min-width: 1024px) {
-        .toolbar-row,
-        .form-header,
-        .journal-header,
-        .main-header,
-        .card-head {
-            padding-right: 220px;
-        }
-    }
 </style>
 
 <div class="global-company-box">

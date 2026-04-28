@@ -38,10 +38,18 @@
         .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
         .form-header-left, .form-header-right { display: flex; align-items: center; gap: 8px; }
         .form-title { margin: 0; font-size: 22px; font-weight: 600; }
+        .company-select-wrap { margin-left: auto; }
+        .company-select {
+            border: 1px solid #8a8886;
+            border-radius: 2px;
+            padding: 6px 8px;
+            font-size: 12px;
+            min-width: 170px;
+            background: #fff;
+        }
     </style>
 </head>
 <body>
-    @include('partials.global-company-selector')
     @php
         $companyQuery = !empty($currentCompanyCode) ? ['company' => strtoupper((string) $currentCompanyCode)] : [];
     @endphp
@@ -70,6 +78,16 @@
                 <div>
                     <h1 class="title">GRN</h1>
                     <p class="subtitle">Only added/posted GRNs are listed here.</p>
+                </div>
+                <div class="company-select-wrap">
+                    <select id="grn-company-select" class="company-select">
+                        @foreach($companies as $c)
+                            @php($code = strtoupper((string) $c->d365_id))
+                            <option value="{{ $code }}" {{ strtoupper((string) ($currentCompanyCode ?? '')) === $code ? 'selected' : '' }}>
+                                {{ $code }} - {{ $c->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
             <div class="body">
@@ -205,7 +223,7 @@
     <script>
     (() => {
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
-        const selectedCompany = () => document.getElementById('global-company-select')?.value || '{{ $currentCompanyCode ?? "" }}';
+        const selectedCompany = () => document.getElementById('grn-company-select')?.value || '{{ $currentCompanyCode ?? "" }}';
 
         const statusBox = document.getElementById('status-box');
         const indexCard = document.getElementById('index-card');
@@ -388,6 +406,13 @@
         document.getElementById('back-to-search-btn').addEventListener('click', showSearch);
         document.getElementById('search-btn').addEventListener('click', searchHeaders);
         document.getElementById('post-btn').addEventListener('click', postGrn);
+        document.getElementById('grn-company-select').addEventListener('change', (e) => {
+            const company = (e.target.value || '').trim();
+            const url = new URL(window.location.href);
+            if (company) url.searchParams.set('company', company);
+            else url.searchParams.delete('company');
+            window.location.href = url.toString();
+        });
         searchResultsBody.addEventListener('click', async (e) => {
             const btn = e.target.closest('.view-po-btn');
             if (!btn) return;
