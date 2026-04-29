@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 class ProjectController extends Controller
 {
     /**
-     * Accept numeric database id, or companies.d365_id (e.g. C001).
+     * Accept numeric database id, or company code (e.g. C001).
      */
     private function resolveCompanyDatabaseId(mixed $value): ?int
     {
@@ -24,18 +24,11 @@ class ProjectController extends Controller
             return null;
         }
 
-        if (preg_match('/^\d+$/', $str)) {
-            $id = (int) $str;
-            if (Company::query()->whereKey($id)->exists()) {
-                return $id;
-            }
-        }
-
-        return Company::query()->where('d365_id', $str)->value('id');
+        return Company::resolveFromMixed($str)?->id;
     }
 
     /**
-     * Accept numeric project id, or projects.d365_id (e.g. PRJ-002).
+     * Accept numeric project db id, or project code (e.g. PRJ-002).
      */
     private function resolveProject(mixed $value): ?Project
     {
@@ -67,7 +60,7 @@ class ProjectController extends Controller
             if ($resolved === null) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'No company found for this id or D365 id.',
+                    'message' => 'No company found for this id or company_id.',
                     'errors' => ['company_id' => ['Unknown company.']],
                 ], 422);
             }
@@ -83,6 +76,10 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'd365_id' => $request->input('d365_id', $request->input('project_id')),
+        ]);
+
         $validated = $request->validate([
             'company_id' => ['required'],
             'd365_id' => ['required', 'string', 'max:100', 'unique:projects,d365_id'],
@@ -92,7 +89,7 @@ class ProjectController extends Controller
         $companyId = $this->resolveCompanyDatabaseId($validated['company_id']);
         if ($companyId === null) {
             throw ValidationException::withMessages([
-                'company_id' => ['No company found for this id or D365 id.'],
+                'company_id' => ['No company found for this id or company_id.'],
             ]);
         }
 
@@ -141,6 +138,10 @@ class ProjectController extends Controller
             ], 404);
         }
 
+        $request->merge([
+            'd365_id' => $request->input('d365_id', $request->input('project_id')),
+        ]);
+
         $validated = $request->validate([
             'company_id' => ['required'],
             'd365_id' => ['required', 'string', 'max:100', 'unique:projects,d365_id,' . $project->id],
@@ -150,7 +151,7 @@ class ProjectController extends Controller
         $companyId = $this->resolveCompanyDatabaseId($validated['company_id']);
         if ($companyId === null) {
             throw ValidationException::withMessages([
-                'company_id' => ['No company found for this id or D365 id.'],
+                'company_id' => ['No company found for this id or company_id.'],
             ]);
         }
 

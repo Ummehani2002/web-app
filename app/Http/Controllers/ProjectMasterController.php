@@ -29,11 +29,11 @@ class ProjectMasterController extends Controller
 
             DB::transaction(function () use ($projects, &$inserted, &$updated, &$createdCompanies): void {
                 foreach ($projects as $row) {
-                    $company = Company::query()->where('d365_id', $row['company_d365_id'])->first();
+                    $company = Company::resolveFromMixed($row['company_d365_id']);
 
                     if (!$company) {
                         $company = Company::create([
-                            'd365_id' => $row['company_d365_id'],
+                            'company_id' => $row['company_d365_id'],
                             'name' => 'D365 ' . $row['company_d365_id'],
                             'created_by' => auth()->id(),
                         ]);

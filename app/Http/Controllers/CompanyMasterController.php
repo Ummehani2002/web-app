@@ -19,12 +19,12 @@ class CompanyMasterController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'd365_id' => ['required', 'string', 'max:100', 'unique:companies,d365_id'],
+            'company_id' => ['required', 'string', 'max:100', 'unique:companies,d365_id'],
             'name' => ['required', 'string', 'max:255'],
         ]);
 
         Company::create([
-            'd365_id' => $validated['d365_id'],
+            'company_id' => $validated['company_id'],
             'name' => $validated['name'],
             'created_by' => auth()->id(),
         ]);
@@ -43,7 +43,9 @@ class CompanyMasterController extends Controller
             $updated = 0;
 
             foreach ($companies as $company) {
-                $existing = Company::where('d365_id', $company['d365_id'])->first();
+                $existing = Company::query()
+                    ->whereRaw('UPPER(d365_id) = ?', [strtoupper((string) $company['d365_id'])])
+                    ->first();
 
                 if ($existing) {
                     $existing->update([
@@ -52,7 +54,7 @@ class CompanyMasterController extends Controller
                     $updated++;
                 } else {
                     Company::create([
-                        'd365_id' => $company['d365_id'],
+                        'company_id' => $company['d365_id'],
                         'name' => $company['name'],
                         'created_by' => auth()->id(),
                     ]);

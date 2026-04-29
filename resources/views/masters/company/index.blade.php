@@ -147,7 +147,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>D365 ID</th>
+                        <th>Company ID</th>
                         <th>Name</th>
                         <th>Created At</th>
                         <th>Action</th>
@@ -200,7 +200,7 @@
                 companiesTbody.innerHTML = companies.map((company, index) => `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${company.d365_id ?? '-'}</td>
+                        <td>${company.company_id ?? company.d365_id ?? '-'}</td>
                         <td>${company.name ?? '-'}</td>
                         <td>${formatDate(company.created_at)}</td>
                         <td>

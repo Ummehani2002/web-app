@@ -119,8 +119,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="d365_id">D365 ID</label>
-                    <input id="d365_id" name="d365_id" type="text" maxlength="100" required placeholder="Project id ">
+                    <label for="project_id">Project ID</label>
+                    <input id="project_id" name="project_id" type="text" maxlength="100" required placeholder="Project ID">
                 </div>
                 <div>
                     <label for="name">Project name</label>
@@ -153,7 +153,7 @@
                 <tr>
                     <th>#</th>
                     <th>Company</th>
-                    <th>D365 ID</th>
+                    <th>Project ID</th>
                     <th>Name</th>
                     <th>Created At</th>
                     <th>Action</th>
@@ -199,11 +199,11 @@
                 const payload = await response.json();
                 const companies = payload.data || [];
                 const options = companies.length
-                    ? companies.map((c) => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.d365_id)})</option>`).join('')
+                    ? companies.map((c) => `<option value="${escapeHtml(c.company_id ?? '')}">${escapeHtml(c.name)} (${escapeHtml(c.company_id ?? '')})</option>`).join('')
                     : '<option value="">No companies — create in Company Master first</option>';
                 companySelect.innerHTML = '<option value="">Select company</option>' + options;
                 filterSelect.innerHTML = '<option value="">All companies</option>' + companies.map((c) =>
-                    `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+                    `<option value="${escapeHtml(c.company_id ?? '')}">${escapeHtml(c.name)} (${escapeHtml(c.company_id ?? '')})</option>`).join('');
             } catch {
                 companySelect.innerHTML = '<option value="">Failed to load companies</option>';
             }
@@ -235,7 +235,7 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>${escapeHtml(p.company?.name ?? '-')}</td>
-                        <td>${escapeHtml(p.d365_id ?? '-')}</td>
+                        <td>${escapeHtml(p.project_id ?? p.d365_id ?? '-')}</td>
                         <td>${escapeHtml(p.name ?? '-')}</td>
                         <td>${formatDate(p.created_at)}</td>
                         <td>
@@ -256,8 +256,8 @@
             setFormMessage(statusEl, '', false);
 
             const body = {
-                company_id: parseInt(companySelect.value, 10),
-                d365_id: document.getElementById('d365_id').value.trim(),
+                company_id: companySelect.value.trim(),
+                project_id: document.getElementById('project_id').value.trim(),
                 name: document.getElementById('name').value.trim(),
             };
 
@@ -281,7 +281,7 @@
                 }
 
                 setFormMessage(statusEl, 'Project created.', true);
-                document.getElementById('d365_id').value = '';
+                document.getElementById('project_id').value = '';
                 document.getElementById('name').value = '';
                 await loadProjects();
             } catch {

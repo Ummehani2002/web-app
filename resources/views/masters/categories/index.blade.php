@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Items Master</title>
+    <title>Item Categories Master</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: #f3f2f1; color: #323130; display: flex; min-height: 100vh; }
@@ -14,13 +14,12 @@
         .menu-link.active { background: #deecf9; color: #005a9e; }
         .sub { margin-left: 16px; padding-left: 8px; border-left: 2px solid #edebe9; }
         .main { flex: 1; padding: 16px; overflow: auto; }
-        .header { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px 16px; margin-bottom: 12px; }
+        .header, .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px; margin-bottom: 12px; }
         .header h1 { margin: 0; font-size: 38px; color: #0f2b56; font-weight: 700; }
-        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px; margin-bottom: 12px; }
-        .form-row { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 8px; max-width: 800px; }
         .form-row label { display: block; font-size: 12px; color: #605e5c; font-weight: 600; margin-bottom: 4px; }
         .form-row input, .form-row select { width: 100%; padding: 8px; border: 1px solid #8a8886; border-radius: 2px; }
-        .btn { background: #106ebe; color: #fff; border: 1px solid #106ebe; padding: 8px 12px; border-radius: 2px; cursor: pointer; }
+        .btn { background: #106ebe; color: #fff; border: 1px solid #106ebe; padding: 8px 12px; border-radius: 2px; cursor: pointer; align-self: end; }
         .status { background: #e8f6ee; color: #1f7a48; padding: 10px; border-radius: 2px; margin-bottom: 10px; }
         .error { background: #fde7e9; color: #a4262c; padding: 10px; border-radius: 2px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; }
@@ -53,44 +52,29 @@
     </aside>
     <main class="main">
         <div class="header">
-            <h1>Items</h1>
+            <h1>Item Categories</h1>
         </div>
         <div class="card">
-            <h2 style="margin-top:0;">Create / Update Item</h2>
+            <h2 style="margin-top:0;">Create Category</h2>
             @if(session('status'))
                 <div class="status">{{ session('status') }}</div>
             @endif
             @if($errors->any())
                 <div class="error">{{ $errors->first() }}</div>
             @endif
-            <form method="post" action="{{ route('masters.items.store', $companyQuery) }}">
+            <form method="post" action="{{ route('masters.categories.store', $companyQuery) }}">
                 @csrf
                 <div class="form-row">
                     <div>
-                        <label for="item_id">Item ID</label>
-                        <input id="item_id" name="item_id" value="{{ old('item_id') }}" required maxlength="100">
+                        <label for="item_category_id">Item Category ID</label>
+                        <input id="item_category_id" name="item_category_id" value="{{ old('item_category_id') }}" required maxlength="100" placeholder="e.g. CAT001">
                     </div>
                     <div>
-                        <label for="item_name">Item Name</label>
-                        <input id="item_name" name="item_name" value="{{ old('item_name') }}" required maxlength="255">
+                        <label for="name">Category Name</label>
+                        <input id="name" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="e.g. Building Materials">
                     </div>
-                    <div>
-                        <label for="type">Type</label>
-                        <input id="type" name="type" value="{{ old('type') }}" maxlength="50">
-                    </div>
-                    <div>
-                        <label for="item_category_id">Item Category</label>
-                        <select id="item_category_id" name="item_category_id">
-                            <option value="">— Select Category —</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->name }}" {{ old('item_category_id') === $category->name ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <button class="btn" type="submit">Save Category</button>
                 </div>
-                <button class="btn" type="submit">Save Item</button>
             </form>
         </div>
         <div class="card">
@@ -98,25 +82,21 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Item ID</th>
-                        <th>Item Name</th>
-                        <th>Type</th>
-                        <th>Item Category</th>
+                        <th>Item Category ID</th>
+                        <th>Category Name</th>
                         <th>Created At</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($items as $idx => $item)
+                    @forelse($categories as $idx => $category)
                         <tr>
                             <td>{{ $idx + 1 }}</td>
-                            <td>{{ $item->item_id ?: $item->d365_id ?: $item->d365_item_id }}</td>
-                            <td>{{ $item->item_name }}</td>
-                            <td>{{ $item->type ?: '—' }}</td>
-                            <td>{{ $item->item_category_id ?: '—' }}</td>
-                            <td>{{ optional($item->created_at)->format('d M Y H:i') }}</td>
+                            <td>{{ $category->item_category_id ?: $category->d365_id ?: '—' }}</td>
+                            <td>{{ $category->name }}</td>
+                            <td>{{ optional($category->created_at)->format('d M Y H:i') }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="empty">No items synced yet.</td></tr>
+                        <tr><td colspan="4" class="empty">No categories yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

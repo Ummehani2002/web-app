@@ -49,7 +49,7 @@ class AppServiceProvider extends ServiceProvider
             $selectedCompany = strtoupper(trim((string) request()->query('company', '')));
 
             if ($selectedCompany === '' && $companies->isNotEmpty()) {
-                $selectedCompany = strtoupper((string) ($companies->first()->d365_id ?? ''));
+                $selectedCompany = strtoupper((string) ($companies->first()->company_id ?? ''));
             }
 
             $view->with('globalCompanyOptions', $companies);

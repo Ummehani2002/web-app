@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\Item;
 use App\Models\ItemCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class ItemMasterController extends Controller
+class ItemCategoryMasterController extends Controller
 {
     public function index(Request $request)
     {
@@ -18,12 +17,6 @@ class ItemMasterController extends Controller
             return strtoupper((string) $c->company_id) === $currentCompanyCode;
         }) ?? $companies->first();
 
-        $items = Item::query()
-            ->when($selectedCompany, function ($query) use ($selectedCompany) {
-                $query->where('company_id', $selectedCompany->id);
-            })
-            ->orderByDesc('created_at')
-            ->get();
         $categories = ItemCategory::query()
             ->when($selectedCompany, function ($query) use ($selectedCompany) {
                 $query->where('company_id', $selectedCompany->id);
@@ -31,9 +24,8 @@ class ItemMasterController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('masters.items.index', [
+        return view('masters.categories.index', [
             'companies' => $companies,
-            'items' => $items,
             'categories' => $categories,
             'currentCompanyCode' => strtoupper((string) ($selectedCompany->company_id ?? $currentCompanyCode)),
             'selectedCompanyId' => $selectedCompany?->id,
@@ -53,38 +45,35 @@ class ItemMasterController extends Controller
         }
 
         $validated = $request->validate([
-            'item_id' => ['required', 'string', 'max:100'],
-            'item_name' => ['required', 'string', 'max:255'],
-            'type' => ['nullable', 'string', 'max:50'],
             'item_category_id' => [
-                'nullable',
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('item_categories', 'd365_id')->where(function ($query) use ($selectedCompany) {
+                    $query->where('company_id', (int) $selectedCompany->id);
+                }),
+            ],
+            'name' => [
+                'required',
                 'string',
                 'max:255',
-                Rule::exists('item_categories', 'name')->where(function ($query) use ($selectedCompany) {
+                Rule::unique('item_categories', 'name')->where(function ($query) use ($selectedCompany) {
                     $query->where('company_id', (int) $selectedCompany->id);
                 }),
             ],
         ]);
 
-        Item::updateOrCreate(
-            [
-                'company_id' => $selectedCompany->id,
-                'd365_id' => $validated['item_id'],
-            ],
-            [
-                'company_id' => $selectedCompany->id,
-                'item_id' => $validated['item_id'],
-                'item_name' => $validated['item_name'],
-                'type' => $validated['type'] ?? null,
-                'item_category_id' => $validated['item_category_id'] ?? null,
-            ]
-        );
+        ItemCategory::create([
+            'company_id' => $selectedCompany->id,
+            'item_category_id' => $validated['item_category_id'],
+            'name' => $validated['name'],
+        ]);
 
         $company = strtoupper((string) $request->query('company', ''));
         $params = $company !== '' ? ['company' => $company] : [];
 
         return redirect()
-            ->route('masters.items.index', $params)
-            ->with('status', 'Item saved successfully.');
+            ->route('masters.categories.index', $params)
+            ->with('status', 'Item category created successfully.');
     }
 }

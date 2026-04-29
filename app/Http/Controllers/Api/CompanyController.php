@@ -10,22 +10,28 @@ class CompanyController extends Controller
 {
     public function index()
     {
+        $companies = Company::latest()->get();
+
         return response()->json([
             'status' => true,
             'message' => 'Companies fetched successfully.',
-            'data' => Company::latest()->get(),
+            'data' => $companies,
         ]);
     }
 
     public function store(Request $request)
     {
+        $request->merge([
+            'company_id' => $request->input('company_id', $request->input('d365_id')),
+        ]);
+
         $validated = $request->validate([
-            'd365_id' => ['required', 'string', 'max:100', 'unique:companies,d365_id'],
+            'company_id' => ['required', 'string', 'max:100', 'unique:companies,d365_id'],
             'name' => ['required', 'string', 'max:255'],
         ]);
 
         $company = Company::create([
-            'd365_id' => $validated['d365_id'],
+            'company_id' => $validated['company_id'],
             'name' => $validated['name'],
             'created_by' => auth()->id(),
         ]);
@@ -48,12 +54,19 @@ class CompanyController extends Controller
 
     public function update(Request $request, Company $company)
     {
+        $request->merge([
+            'company_id' => $request->input('company_id', $request->input('d365_id')),
+        ]);
+
         $validated = $request->validate([
-            'd365_id' => ['required', 'string', 'max:100', 'unique:companies,d365_id,' . $company->id],
+            'company_id' => ['required', 'string', 'max:100', 'unique:companies,d365_id,' . $company->id],
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        $company->update($validated);
+        $company->update([
+            'company_id' => $validated['company_id'],
+            'name' => $validated['name'],
+        ]);
 
         return response()->json([
             'status' => true,

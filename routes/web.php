@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\MicrosoftOAuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CompanyMasterController;
+use App\Http\Controllers\ItemCategoryMasterController;
 use App\Http\Controllers\ItemMasterController;
 use App\Http\Controllers\ItemIssueController;
 use App\Http\Controllers\GrnController;
@@ -69,13 +70,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('masters.project.quick-add');
     Route::post('/masters/project/sync-d365', [ProjectMasterController::class, 'syncFromD365'])
         ->name('masters.project.sync');
+    Route::get('/masters/categories', [ItemCategoryMasterController::class, 'index'])
+        ->name('masters.categories.index');
+    Route::post('/masters/categories', [ItemCategoryMasterController::class, 'store'])
+        ->name('masters.categories.store');
     Route::get('/masters/items', [ItemMasterController::class, 'index'])
         ->name('masters.items.index');
     Route::post('/masters/items', [ItemMasterController::class, 'store'])
         ->name('masters.items.store');
 
     $masterStubs = [
-        'categories' => 'Categories',
         'sizes' => 'Sizes',
         'colors' => 'Colors',
         'styles' => 'Styles',
