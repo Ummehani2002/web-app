@@ -17,16 +17,29 @@ class ItemCategoryMasterController extends Controller
             return strtoupper((string) $c->company_id) === $currentCompanyCode;
         }) ?? $companies->first();
 
+        $categories = collect();
         if ($selectedCompany) {
-            $this->ensureCompanyCategories((int) $selectedCompany->id);
+            $categories = ItemCategory::query()
+                ->where('company_id', $selectedCompany->id)
+                ->orderBy('name')
+                ->get();
         }
 
-        $categories = ItemCategory::query()
-            ->when($selectedCompany, function ($query) use ($selectedCompany) {
-                $query->where('company_id', $selectedCompany->id);
-            })
-            ->orderBy('name')
-            ->get();
+        // Fallback: if selected company has none yet, show shared templates from any company.
+        if ($selectedCompany && $categories->isEmpty()) {
+            $templateCompanyId = ItemCategory::query()
+                ->whereNotNull('company_id')
+                ->whereNotNull('d365_id')
+                ->where('d365_id', '!=', '')
+                ->value('company_id');
+
+            if ($templateCompanyId) {
+                $categories = ItemCategory::query()
+                    ->where('company_id', $templateCompanyId)
+                    ->orderBy('name')
+                    ->get();
+            }
+        }
 
         return view('masters.categories.index', [
             'companies' => $companies,
@@ -79,31 +92,5 @@ class ItemCategoryMasterController extends Controller
         return redirect()
             ->route('masters.categories.index', $params)
             ->with('status', 'Item category created successfully.');
-    }
-
-    /**
-     * Keep categories aligned across companies by creating missing IDs.
-     */
-    private function ensureCompanyCategories(int $companyId): void
-    {
-        $templates = ItemCategory::query()
-            ->whereNotNull('d365_id')
-            ->where('d365_id', '!=', '')
-            ->select(['d365_id', 'name'])
-            ->distinct()
-            ->orderBy('d365_id')
-            ->get();
-
-        foreach ($templates as $template) {
-            ItemCategory::query()->firstOrCreate(
-                [
-                    'company_id' => $companyId,
-                    'd365_id' => $template->d365_id,
-                ],
-                [
-                    'name' => $template->name,
-                ]
-            );
-        }
     }
 }
