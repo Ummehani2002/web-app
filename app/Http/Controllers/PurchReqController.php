@@ -68,11 +68,11 @@ class PurchReqController extends Controller
                 'remarks'                     => ['nullable', 'string', 'max:500'],
                 'department'                  => ['required', 'string', 'max:255'],
                 'lines'                       => ['required', 'array', 'min:1'],
-                'lines.*.item_category'       => ['required', 'string', 'max:100'],
-                'lines.*.item_id'             => ['required', 'string', 'max:100'],
+                'lines.*.item_category'       => ['nullable', 'string', 'max:100'],
+                'lines.*.item_id'             => ['nullable', 'string', 'max:100'],
                 'lines.*.item_description'    => ['nullable', 'string', 'max:255'],
                 'lines.*.required_date'       => ['required', 'date'],
-                'lines.*.unit'                => ['required', 'string', 'max:30'],
+                'lines.*.unit'                => ['nullable', 'string', 'max:30'],
                 'lines.*.qty'                 => ['required', 'numeric', 'gt:0'],
                 'lines.*.currency'            => ['required', 'string', 'max:10'],
                 'lines.*.rate'                => ['required', 'numeric', 'min:0'],
@@ -87,6 +87,7 @@ class PurchReqController extends Controller
                 'attachments.*.file_content'  => ['required', 'string'],
                 'attachments.*.purch_id'      => ['nullable', 'string', 'max:100'],
             ]);
+            $validated['lines'] = $this->normalizeSubmittedLines($validated['lines']);
 
             $requestId = $this->generatePRRequestId();
             $prNo      = $this->generatePRNo();
@@ -541,6 +542,64 @@ class PurchReqController extends Controller
 
             return $id !== '' ? ['id' => $id, 'name' => $name] : null;
         }, $rows)));
+    }
+
+    private function normalizeSubmittedLines(array $lines): array
+    {
+        $itemIds = collect($lines)
+            ->map(fn (array $line) => trim((string) ($line['item_id'] ?? '')))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $itemCategoryMap = [];
+        if ($itemIds->isNotEmpty()) {
+            $items = Item::query()
+                ->select(['d365_id', 'd365_item_id', 'item_category_id'])
+                ->whereIn('d365_id', $itemIds->all())
+                ->orWhereIn('d365_item_id', $itemIds->all())
+                ->get();
+
+            foreach ($items as $item) {
+                $category = trim((string) ($item->item_category_id ?? ''));
+                if ($category === '') {
+                    continue;
+                }
+
+                $keys = array_filter([
+                    trim((string) ($item->d365_id ?? '')),
+                    trim((string) ($item->d365_item_id ?? '')),
+                ]);
+
+                foreach ($keys as $key) {
+                    $itemCategoryMap[strtolower($key)] = $category;
+                }
+            }
+        }
+
+        return array_map(function (array $line) use ($itemCategoryMap) {
+            $itemId = trim((string) ($line['item_id'] ?? ''));
+            $itemCategory = trim((string) ($line['item_category'] ?? ''));
+
+            if ($itemCategory === '' && $itemId !== '') {
+                $itemCategory = $itemCategoryMap[strtolower($itemId)] ?? '';
+            }
+
+            if ($itemCategory === '' && $itemId === '') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'lines' => ['Each line must include either Item Category or Item ID.'],
+                ]);
+            }
+
+            if ($itemId === '') {
+                $line['unit'] = '';
+            }
+
+            $line['item_id'] = $itemId;
+            $line['item_category'] = $itemCategory;
+
+            return $line;
+        }, $lines);
     }
 
     private function resolveCompanyDataAreaId(string $company): string

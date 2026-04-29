@@ -436,6 +436,13 @@
             });
         }
 
+        function getItemById(itemId) {
+            const key = String(itemId ?? '').trim().toLowerCase();
+            if (!key) return null;
+
+            return itemCatalog.items.find((item) => String(item.id ?? '').trim().toLowerCase() === key) ?? null;
+        }
+
         function renderCategoryOptions(selected = '') {
             const selectedKey = String(selected ?? '').trim().toLowerCase();
             const options = itemCatalog.categories.map((category) => {
@@ -448,26 +455,37 @@
             return `<option value="">—</option>${options}`;
         }
 
-        function renderItemOptions(categoryId, selectedItemId = '') {
+        function renderItemOptions(selectedItemId = '') {
             const selectedKey = String(selectedItemId ?? '').trim().toLowerCase();
-            const options = getItemsByCategory(categoryId).map((item) => {
+            const options = itemCatalog.items.map((item) => {
                 const id = String(item.id ?? '').trim();
                 const name = String(item.name ?? '').trim();
+                const category = String(item.category ?? '').trim();
                 const selectedAttr = id.toLowerCase() === selectedKey ? ' selected' : '';
                 const label = name ? `${id} - ${name}` : id;
-                return `<option value="${escapeHtml(id)}"${selectedAttr}>${escapeHtml(label)}</option>`;
+                const labelWithCategory = category ? `${label} (${category})` : label;
+                return `<option value="${escapeHtml(id)}"${selectedAttr}>${escapeHtml(labelWithCategory)}</option>`;
             }).join('');
 
-            return `<option value="">${categoryId ? '— select item —' : 'Select category first'}</option>${options}`;
+            return `<option value="">—</option>${options}`;
+        }
+
+        function updateLineCategoryFromItem(tr) {
+            const itemSelect = tr.querySelector('.lf-item-id');
+            const categorySelect = tr.querySelector('.lf-category');
+            if (!itemSelect || !categorySelect) return;
+
+            const selectedItem = getItemById(itemSelect.value);
+            if (selectedItem?.category) {
+                categorySelect.value = selectedItem.category;
+            }
         }
 
         function updateItemSelectForRow(tr, preferredItemId = '') {
-            const category = tr.querySelector('.lf-category')?.value ?? '';
             const itemSelect = tr.querySelector('.lf-item-id');
             if (!itemSelect) return;
 
-            itemSelect.innerHTML = renderItemOptions(category, preferredItemId);
-            itemSelect.disabled = !category;
+            itemSelect.innerHTML = renderItemOptions(preferredItemId);
         }
 
         function renumberLines() {
@@ -608,7 +626,7 @@
             }
 
             if (!itemId) {
-                unitSelect.innerHTML = '<option value="">Enter item ID</option>';
+                unitSelect.innerHTML = '<option value="">Optional until item is selected</option>';
                 unitNote.textContent = '';
                 return;
             }
@@ -669,11 +687,19 @@
             if (e.target.classList.contains('lf-category')) {
                 const tr = e.target.closest('tr');
                 if (tr) {
-                    updateItemSelectForRow(tr);
+                    const categorySelect = tr.querySelector('.lf-category');
+                    const itemSelect = tr.querySelector('.lf-item-id');
+                    const selectedItem = getItemById(itemSelect?.value ?? '');
+                    const selectedCategory = String(categorySelect?.value ?? '').trim().toLowerCase();
+                    const itemCategory = String(selectedItem?.category ?? '').trim().toLowerCase();
+                    if (itemSelect && selectedItem && selectedCategory && itemCategory && selectedCategory !== itemCategory) {
+                        itemSelect.value = '';
+                    }
+                    updateItemSelectForRow(tr, itemSelect?.value ?? '');
                     const unitSelect = tr.querySelector('.lf-unit');
                     const unitNote = tr.querySelector('.lf-unit-note');
                     if (unitSelect) {
-                        unitSelect.innerHTML = '<option value="">Select item first</option>';
+                        unitSelect.innerHTML = '<option value="">Optional until item is selected</option>';
                     }
                     if (unitNote) {
                         unitNote.textContent = '';
@@ -683,14 +709,20 @@
             }
             if (e.target.classList.contains('lf-item-id')) {
                 const tr = e.target.closest('tr');
-                if (tr) loadUnitsForRow(tr);
+                if (tr) {
+                    updateLineCategoryFromItem(tr);
+                    loadUnitsForRow(tr);
+                }
             }
         });
 
         linesBody.addEventListener('blur', (e) => {
             if (e.target.classList.contains('lf-item-id')) {
                 const tr = e.target.closest('tr');
-                if (tr) loadUnitsForRow(tr);
+                if (tr) {
+                    updateLineCategoryFromItem(tr);
+                    loadUnitsForRow(tr);
+                }
             }
         }, true);
 
@@ -740,6 +772,7 @@
                         categorySelect.innerHTML = renderCategoryOptions(existingCategory);
                     }
                     updateItemSelectForRow(tr, existingItem);
+                    updateLineCategoryFromItem(tr);
                 });
             } catch (err) {
                 showStatus('✗ ' + (err.message || 'Unable to load item catalog.'), 'error');
@@ -759,7 +792,7 @@
                 if (!unitSelect || !unitNote) return;
 
                 if (!itemId) {
-                    unitSelect.innerHTML = '<option value="">Enter item ID</option>';
+                    unitSelect.innerHTML = '<option value="">Optional until item is selected</option>';
                     unitNote.textContent = '';
                     return;
                 }
@@ -775,7 +808,7 @@
                 if (!unitSelect || !unitNote) return;
 
                 if (!itemId) {
-                    unitSelect.innerHTML = '<option value="">Enter item ID</option>';
+                    unitSelect.innerHTML = '<option value="">Optional until item is selected</option>';
                     unitNote.textContent = '';
                     return;
                 }
@@ -927,9 +960,19 @@
 
             for (let i = 0; i < lines.length; i++) {
                 const ln = lines[i];
-                if (!ln.item_category) { showStatus(`Line ${i + 1}: Item Category is required.`, 'error'); return; }
-                if (!ln.item_id) { showStatus(`Line ${i + 1}: Item ID is required.`, 'error'); return; }
-                if (!ln.unit) { showStatus(`Line ${i + 1}: Unit is required.`, 'error'); return; }
+                const hasCategory = Boolean(String(ln.item_category ?? '').trim());
+                const hasItemId = Boolean(String(ln.item_id ?? '').trim());
+                if (!hasCategory && !hasItemId) {
+                    showStatus(`Line ${i + 1}: Enter either Item Category or Item ID.`, 'error');
+                    return;
+                }
+                if (hasItemId && !hasCategory) {
+                    const inferredItem = getItemById(ln.item_id);
+                    if (inferredItem?.category) {
+                        ln.item_category = inferredItem.category;
+                    }
+                }
+                if (hasItemId && !ln.unit) { showStatus(`Line ${i + 1}: Unit is required when Item ID is selected.`, 'error'); return; }
                 if (!ln.required_date) { showStatus(`Line ${i + 1}: Required Date is required.`, 'error'); return; }
                 if (parseFloat(ln.qty) <= 0) { showStatus(`Line ${i + 1}: Qty must be > 0.`, 'error'); return; }
             }
