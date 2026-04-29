@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Item extends Model
 {
@@ -32,5 +33,10 @@ class Item extends Model
         $resolved = $value === null ? null : trim((string) $value);
         $this->attributes['d365_id'] = $resolved;
         $this->attributes['d365_item_id'] = $resolved;
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 }
