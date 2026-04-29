@@ -13,9 +13,16 @@
         .menu-link:hover { background: #f3f2f1; }
         .menu-link.active { background: #deecf9; color: #005a9e; }
         .sub { margin-left: 16px; padding-left: 8px; border-left: 2px solid #edebe9; }
-        .main { flex: 1; padding: 16px; overflow: auto; }
-        .header, .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; padding: 14px; margin-bottom: 12px; }
-        .header h1 { margin: 0; font-size: 38px; color: #0f2b56; font-weight: 700; }
+        .main { flex: 1; padding: 12px 16px; overflow: auto; }
+        .page-shell { border: 1px solid #edebe9; background: #fff; border-radius: 2px; overflow: hidden; }
+        .command-bar { height: 44px; border-bottom: 1px solid #edebe9; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+        .crumb { font-size: 12px; color: #605e5c; }
+        .toolbar { margin-bottom: 12px; }
+        .toolbar-row { display: flex; justify-content: flex-start; align-items: center; gap: 12px; }
+        .title { margin: 0 0 4px; font-size: 24px; font-weight: 600; }
+        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; margin-bottom: 12px; overflow: hidden; }
+        .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; font-size: 20px; font-weight: 600; }
+        .card-body { padding: 14px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 8px; max-width: 800px; }
         .form-row label { display: block; font-size: 12px; color: #605e5c; font-weight: 600; margin-bottom: 4px; }
         .form-row input, .form-row select { width: 100%; padding: 8px; border: 1px solid #8a8886; border-radius: 2px; }
@@ -51,55 +58,68 @@
         <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}">Settings</a>
     </aside>
     <main class="main">
-        <div class="header">
-            <h1>Item Categories</h1>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0;">Create Category</h2>
-            @if(session('status'))
-                <div class="status">{{ session('status') }}</div>
-            @endif
-            @if($errors->any())
-                <div class="error">{{ $errors->first() }}</div>
-            @endif
-            <form method="post" action="{{ route('masters.categories.store', $companyQuery) }}">
-                @csrf
-                <div class="form-row">
-                    <div>
-                        <label for="item_category_id">Item Category ID</label>
-                        <input id="item_category_id" name="item_category_id" value="{{ old('item_category_id') }}" required maxlength="100" placeholder="e.g. CAT001">
+        <div class="page-shell">
+            <div class="command-bar">
+                <div class="crumb">Masters / Item Categories</div>
+            </div>
+            <div style="padding:12px;">
+                <div class="toolbar">
+                    <div class="toolbar-row">
+                        <div><h1 class="title">Item Categories</h1></div>
                     </div>
-                    <div>
-                        <label for="name">Category Name</label>
-                        <input id="name" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="e.g. Building Materials">
-                    </div>
-                    <button class="btn" type="submit">Save Category</button>
                 </div>
-            </form>
-        </div>
-        <div class="card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Item Category ID</th>
-                        <th>Category Name</th>
-                        <th>Created At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($categories as $idx => $category)
-                        <tr>
-                            <td>{{ $idx + 1 }}</td>
-                            <td>{{ $category->item_category_id ?: $category->d365_id ?: '—' }}</td>
-                            <td>{{ $category->name }}</td>
-                            <td>{{ optional($category->created_at)->format('d M Y H:i') }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="empty">No categories yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+
+                <div class="card">
+                    <div class="card-head">Create Category</div>
+                    <div class="card-body">
+                        @if(session('status'))
+                            <div class="status">{{ session('status') }}</div>
+                        @endif
+                        @if($errors->any())
+                            <div class="error">{{ $errors->first() }}</div>
+                        @endif
+                        <form method="post" action="{{ route('masters.categories.store', $companyQuery) }}">
+                            @csrf
+                            <div class="form-row">
+                                <div>
+                                    <label for="item_category_id">Item Category ID</label>
+                                    <input id="item_category_id" name="item_category_id" value="{{ old('item_category_id') }}" required maxlength="100" placeholder="e.g. CAT001">
+                                </div>
+                                <div>
+                                    <label for="name">Category Name</label>
+                                    <input id="name" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="e.g. Building Materials">
+                                </div>
+                                <button class="btn" type="submit">Save Category</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Item Category ID</th>
+                                <th>Category Name</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($categories as $idx => $category)
+                                <tr>
+                                    <td>{{ $idx + 1 }}</td>
+                                    <td>{{ $category->item_category_id ?: $category->d365_id ?: '—' }}</td>
+                                    <td>{{ $category->name }}</td>
+                                    <td>{{ optional($category->created_at)->format('d M Y H:i') }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="empty">No categories yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
 </body>

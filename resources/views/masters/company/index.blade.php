@@ -26,26 +26,20 @@
         .menu-link:hover { background: #f3f2f1; }
         .menu-link.active { background: #deecf9; color: #005a9e; }
         .sub { margin-left: 16px; padding-left: 8px; border-left: 2px solid #edebe9; }
-        .main {
-            flex: 1;
-            padding: 16px;
-            overflow: auto;
-        }
-        .header {
-            background: #fff;
-            color: #201f1e;
-            padding: 14px 16px;
-            border: 1px solid #edebe9;
-            border-radius: 2px;
-            margin-bottom: 12px;
-        }
+        .main { flex: 1; padding: 12px 16px; overflow: auto; }
+        .page-shell { border: 1px solid #edebe9; background: #fff; border-radius: 2px; overflow: hidden; }
+        .command-bar { height: 44px; border-bottom: 1px solid #edebe9; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+        .crumb { font-size: 12px; color: #605e5c; }
+        .toolbar { margin-bottom: 12px; }
+        .toolbar-row { display: flex; justify-content: flex-start; align-items: center; gap: 12px; }
+        .title { margin: 0 0 4px; font-size: 24px; font-weight: 600; }
         .card {
             background: white;
             border-radius: 2px;
             border: 1px solid #edebe9;
-            padding: 14px;
-            margin-bottom: 12px;
+            overflow: hidden;
         }
+        .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; font-size: 20px; font-weight: 600; }
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -100,11 +94,7 @@
             border-radius: 2px;
             margin-bottom: 12px;
         }
-        .back-link {
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 12px;
-        }
+        .back-link { text-decoration: none; display: inline-block; margin-top: 12px; font-size: 13px; }
         .action-btn {
             background: #a4262c;
             padding: 6px 10px;
@@ -137,29 +127,40 @@
         <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}">Settings</a>
     </aside>
     <main class="main">
-        <div class="header">
-            <h1>Company Master</h1>
-        </div>
+        <div class="page-shell">
+            <div class="command-bar">
+                <div class="crumb">Masters / Company</div>
+            </div>
+            <div style="padding:12px;">
+                <div class="toolbar">
+                    <div class="toolbar-row">
+                        <div><h1 class="title">Company Master</h1></div>
+                    </div>
+                </div>
 
-        <div class="card">
-            <h2>Companies</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Company ID</th>
-                        <th>Name</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="5" id="companies-loading">Loading companies...</td>
-                    </tr>
-                </tbody>
-            </table>
-            <a class="back-link" href="{{ route('dashboard', $companyQuery) }}">Back to Dashboard</a>
+                <div class="card">
+                    <div class="card-head">Companies</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Company ID</th>
+                                <th>Name</th>
+                                <th>Created At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" id="companies-loading">Loading companies...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="padding: 0 14px 12px;">
+                        <a class="back-link" href="{{ route('dashboard', $companyQuery) }}">Back to Dashboard</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
     <script>
