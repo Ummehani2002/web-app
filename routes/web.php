@@ -170,12 +170,15 @@ Route::middleware(['auth'])->group(function () {
     })->name('purchase-orders.index');
     
     // Goods Receive Note (GRN) Module
-    Route::get('/grns', [GrnController::class, 'index'])->name('grns.index');
-    Route::post('/modules/procurement/grn/api/headers', [GrnController::class, 'lookupHeaders'])
-        ->name('modules.procurement.grn.api.headers');
-    Route::post('/modules/procurement/grn/api/lines', [GrnController::class, 'lookupLines'])
+    Route::get('/modules/procurement/grn', [GrnController::class, 'index'])
+        ->name('modules.procurement.grn');
+    Route::get('/modules/procurement/grn/view', [GrnController::class, 'view'])
+        ->name('modules.procurement.grn.view');
+    Route::post('/modules/procurement/grn/api/search', [GrnController::class, 'search'])
+        ->name('modules.procurement.grn.api.search');
+    Route::post('/modules/procurement/grn/api/lines', [GrnController::class, 'lineDetails'])
         ->name('modules.procurement.grn.api.lines');
-    Route::post('/modules/procurement/grn/api/post', [GrnController::class, 'post'])
+    Route::post('/modules/procurement/grn/api/post', [GrnController::class, 'postPackingSlip'])
         ->name('modules.procurement.grn.api.post');
     
     // Inventory Module

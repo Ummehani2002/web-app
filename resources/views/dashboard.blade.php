@@ -220,7 +220,7 @@
                             <a class="nav-link nested {{ request()->routeIs('quotations.*') ? 'active' : '' }}" href="{{ route('quotations.index', $companyQuery) }}">Quotation</a>
                             <a class="nav-link nested {{ request()->routeIs('modules.procurement.purch-req*') ? 'active' : '' }}" href="{{ route('modules.procurement.purch-req', $companyQuery) }}">Purchase Requisition</a>
                             <a class="nav-link nested {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}" href="{{ route('purchase-orders.index', $companyQuery) }}">Purchase Order</a>
-                            <a class="nav-link nested {{ request()->routeIs('grns.*') ? 'active' : '' }}" href="{{ route('grns.index', $companyQuery) }}">Goods Receive Note</a>
+                            <a class="nav-link nested {{ request()->routeIs('modules.procurement.grn*') ? 'active' : '' }}" href="{{ route('modules.procurement.grn', $companyQuery) }}">Goods Receive Note</a>
                             <a class="nav-link nested {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index', $companyQuery) }}">Inventory</a>
                             <a class="nav-link nested {{ request()->routeIs('vendors.*') ? 'active' : '' }}" href="{{ route('vendors.index', $companyQuery) }}">Vendors</a>
                             <a class="nav-link nested {{ request()->routeIs('customers.*') ? 'active' : '' }}" href="{{ route('customers.index', $companyQuery) }}">Customers</a>

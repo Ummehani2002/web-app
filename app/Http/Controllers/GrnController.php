@@ -3,16 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\GrnJournal;
 use App\Services\D365GrnService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 class GrnController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $companies = Company::query()
             ->select(['id', 'd365_id', 'name'])
@@ -20,75 +18,58 @@ class GrnController extends Controller
             ->orderBy('name')
             ->get();
 
-        $defaultCompany = $companies->first(function (Company $company) {
-            return strtoupper((string) $company->d365_id) === 'PS';
-        }) ?? $companies->first();
-
-        $requestedCompanyCode = strtoupper(trim((string) $request->query('company', '')));
-        $selectedCompany = $companies->first(function (Company $company) use ($requestedCompanyCode) {
-            return strtoupper((string) $company->d365_id) === $requestedCompanyCode;
-        }) ?? $defaultCompany;
-
-        if ($selectedCompany && strtoupper((string) $selectedCompany->d365_id) !== $requestedCompanyCode) {
-            return redirect()->route('grns.index', [
-                'company' => strtoupper((string) $selectedCompany->d365_id),
-            ]);
-        }
-
-        $journals = collect();
-        if (Schema::hasTable('grn_journals')) {
-            $journals = GrnJournal::query()
-                ->when($selectedCompany, function ($query) use ($selectedCompany) {
-                    $query->where('company', $selectedCompany->d365_id);
-                })
-                ->orderByDesc('created_at')
-                ->get();
-        }
-
         return view('modules.procurement.grn.index', [
             'companies' => $companies,
-            'currentCompanyCode' => $selectedCompany?->d365_id,
-            'journals' => $journals,
         ]);
     }
 
-    public function lookupHeaders(Request $request, D365GrnService $service): JsonResponse
+    public function search(Request $request, D365GrnService $service): JsonResponse
     {
+        set_time_limit(60);
+
         $validated = $request->validate([
-            'company' => ['required', 'string', 'max:20'],
-            'packing_slip_id' => ['nullable', 'string', 'max:100'],
-            'purch_id' => ['nullable', 'string', 'max:100'],
-            'vendor_name' => ['nullable', 'string', 'max:200'],
-            'project_id' => ['nullable', 'string', 'max:100'],
+            'company'   => ['required', 'string', 'max:20'],
+            'purch_id'  => ['nullable', 'string', 'max:100'],
+        
+            'vend_name' => ['nullable', 'string', 'max:255'],
+            'proj_id'   => ['nullable', 'string', 'max:100'],
         ]);
 
-        if (
-            trim((string) ($validated['purch_id'] ?? '')) === '' &&
-            trim((string) ($validated['vendor_name'] ?? '')) === '' &&
-            trim((string) ($validated['project_id'] ?? '')) === ''
-        ) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Fill at least one filter: PurchId, Vendor Name or Project ID.',
-            ], 422);
-        }
-
         try {
-            $payload = [
-                'DataAreaId' => trim($validated['company']),
-                'PackingSlipID' => trim((string) ($validated['packing_slip_id'] ?? '')),
-                'PurchId' => trim((string) ($validated['purch_id'] ?? '')),
-                'VendName' => trim((string) ($validated['vendor_name'] ?? '')),
-                'ProjId' => trim((string) ($validated['project_id'] ?? '')),
-            ];
+            $company = trim($validated['company']);
+            $purchId = trim((string) ($validated['purch_id'] ?? ''));
+            $vendName = trim((string) ($validated['vend_name'] ?? ''));
+            $projId = trim((string) ($validated['proj_id'] ?? ''));
 
-            $result = $service->lookupHeaders($payload);
+            $raw = $service->lookup(
+                $company,
+                $purchId,
+                $vendName,
+                $projId
+            );
+
+            $rows = $this->normalizeRows($raw);
+            $rows = $this->applySearchFilters(
+                $rows,
+                $purchId,
+                $vendName,
+                $projId
+            );
+
+            if ($rows === [] && ($vendName !== '' || $projId !== '')) {
+                $fallbackRaw = $service->lookup($company, $purchId, '', '');
+                $fallbackRows = $this->normalizeRows($fallbackRaw);
+                $rows = $this->applySearchFilters($fallbackRows, $purchId, $vendName, $projId);
+                if ($rows !== []) {
+                    $raw = $fallbackRaw;
+                }
+            }
 
             return response()->json([
-                'status' => true,
-                'message' => 'GRN headers fetched.',
-                'rows' => $this->normalizeHeaders($result),
-                'data' => $result,
+                'status'  => true,
+                'message' => 'GRN data fetched from D365.',
+                'rows'    => $rows,
+                'data'    => $raw,
             ]);
         } catch (Throwable $e) {
             report($e);
@@ -101,34 +82,54 @@ class GrnController extends Controller
         }
     }
 
-    public function lookupLines(Request $request, D365GrnService $service): JsonResponse
+    public function view(Request $request)
     {
         $validated = $request->validate([
             'company' => ['required', 'string', 'max:20'],
-            'request_id' => ['nullable', 'string', 'max:100'],
-            'packing_slip_id' => ['nullable', 'string', 'max:100'],
-            'purch_id' => ['nullable', 'string', 'max:100'],
-            'vendor_name' => ['nullable', 'string', 'max:200'],
+            'purchase_id' => ['required', 'string', 'max:100'],
+            'vendor_name' => ['nullable', 'string', 'max:255'],
             'project_id' => ['nullable', 'string', 'max:100'],
         ]);
 
-        try {
-            $payload = [
-                'DataAreaId' => trim($validated['company']),
-                'RequestID' => trim((string) ($validated['request_id'] ?? '')),
-                'PackingSlipID' => trim((string) ($validated['packing_slip_id'] ?? '')),
-                'PurchId' => trim((string) ($validated['purch_id'] ?? '')),
-                'VendName' => trim((string) ($validated['vendor_name'] ?? '')),
-                'ProjId' => trim((string) ($validated['project_id'] ?? '')),
-            ];
+        return view('modules.procurement.grn.view', [
+            'company' => trim($validated['company']),
+            'purchaseId' => trim($validated['purchase_id']),
+            'vendorName' => trim((string) ($validated['vendor_name'] ?? '')),
+            'projectId' => trim((string) ($validated['project_id'] ?? '')),
+        ]);
+    }
 
-            $result = $service->lookupLines($payload);
+    public function lineDetails(Request $request, D365GrnService $service): JsonResponse
+    {
+        set_time_limit(60);
+
+        $validated = $request->validate([
+            'company'      => ['required', 'string', 'max:20'],
+            'purchase_id'  => ['required', 'string', 'max:100'],
+            'vendor_name'  => ['nullable', 'string', 'max:255'],
+            'project_id'   => ['nullable', 'string', 'max:100'],
+        ]);
+
+        try {
+            $raw = $service->lookupLines(
+                trim($validated['company']),
+                trim($validated['purchase_id'])
+            );
+
+            $lines = $this->normalizeLineRows($raw);
 
             return response()->json([
                 'status' => true,
-                'message' => 'GRN lines fetched.',
-                'rows' => $this->normalizeLines($result),
-                'data' => $result,
+                'message' => 'GRN line details fetched from D365.',
+                'header' => [
+                    'purchase_order' => $validated['purchase_id'],
+                    'vendor_name' => trim((string) ($validated['vendor_name'] ?? '')) ?: '-',
+                    'project_id' => trim((string) ($validated['project_id'] ?? '')) ?: '-',
+                    'packing_slip_id' => '',
+                    'document_date' => '',
+                ],
+                'lines' => $lines,
+                'data' => $raw,
             ]);
         } catch (Throwable $e) {
             report($e);
@@ -141,74 +142,72 @@ class GrnController extends Controller
         }
     }
 
-    public function post(Request $request, D365GrnService $service): JsonResponse
+    public function postPackingSlip(Request $request, D365GrnService $service): JsonResponse
     {
+        set_time_limit(90);
+
         $validated = $request->validate([
             'company' => ['required', 'string', 'max:20'],
-            'request_id' => ['required', 'string', 'max:100'],
-            'packing_slip_date' => ['required', 'date'],
-            'purch_id' => ['required', 'string', 'max:100'],
-            'project_id' => ['nullable', 'string', 'max:100'],
-            'vendor_name' => ['nullable', 'string', 'max:200'],
+            'purchase_id' => ['required', 'string', 'max:100'],
             'packing_slip_id' => ['required', 'string', 'max:100'],
+            'document_date' => ['required', 'date'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.line_number' => ['required', 'integer', 'min:1'],
-            'lines.*.purch_line_rec_id' => ['required', 'numeric'],
-            'lines.*.receive_now' => ['required', 'numeric', 'min:0'],
+            'lines.*.line_rec_id' => ['required'],
+            'lines.*.receive_qty' => ['required', 'numeric', 'gte:0'],
         ]);
 
-        $d365Payload = [
-            '_request' => [
-                'DataAreaId' => trim($validated['company']),
-                'PurchPackHeader' => [
-                    'RequestID' => trim($validated['request_id']),
-                    'PackingSlipDate' => $validated['packing_slip_date'],
-                    'PurchId' => trim($validated['purch_id']),
-                    'PackingSlipID' => trim($validated['packing_slip_id']),
-                ],
-                'PurchPackLines' => array_map(function (array $line) {
-                    return [
-                        'LineNumber' => (int) $line['line_number'],
-                        'PurchLineRecId' => (float) $line['purch_line_rec_id'],
-                        'ReceiveNow' => (float) $line['receive_now'],
-                    ];
-                }, $validated['lines']),
-            ],
-        ];
-
         try {
-            $result = $service->postGrn($d365Payload);
+            $purchaseId = trim($validated['purchase_id']);
+            $requestId = $this->generatePackingRequestId($purchaseId);
 
-            if ($this->isFailedD365Response($result)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'GRN post failed.',
-                    'error' => $this->extractD365ErrorMessage($result),
-                    'data' => $result,
-                ], 422);
+            $header = [
+                'RequestID' => $requestId,
+                'PackingSlipDate' => $validated['document_date'],
+                'PurchId' => $purchaseId,
+                'PackingSlipID' => trim($validated['packing_slip_id']),
+            ];
+
+            $lines = array_map(function (array $line) {
+                return [
+                    'LineNumber' => (int) $line['line_number'],
+                    'PurchLineRecId' => (string) $line['line_rec_id'],
+                    'ReceiveNow' => (float) $line['receive_qty'],
+                ];
+            }, $validated['lines']);
+
+            foreach ($lines as $line) {
+                if ((float) ($line['ReceiveNow'] ?? 0) < 0) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'ReceiveNow cannot be negative.',
+                    ], 422);
+                }
             }
 
-            $saved = null;
-            if (Schema::hasTable('grn_journals')) {
-                $saved = GrnJournal::create([
-                    'request_id' => trim($validated['request_id']),
-                    'company' => trim($validated['company']),
-                    'purch_id' => trim($validated['purch_id']),
-                    'project_id' => trim((string) ($validated['project_id'] ?? '')),
-                    'vendor_name' => trim((string) ($validated['vendor_name'] ?? '')),
-                    'packing_slip_id' => trim($validated['packing_slip_id']),
-                    'document_date' => $validated['packing_slip_date'],
-                    'lines' => $validated['lines'],
-                    'd365_response' => $result,
-                    'posted_by' => auth()->id(),
-                ]);
+            $raw = $service->postPackingSlip(trim($validated['company']), $header, $lines);
+
+            $success = (bool) ($this->pickValue($raw, ['Success', 'success']) ?? false);
+            $errorMessage = $this->pickValue($raw, ['ErrorMessage', 'errorMessage']);
+            $infoMessage = $this->pickValue($raw, ['InfoMessage', 'infoMessage']);
+            $packingSlipId = $this->pickValue($raw, ['PackingSlipId', 'packingSlipId']) ?: $header['PackingSlipID'];
+
+            if (!$success) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $errorMessage ?: 'Posting failed in D365.',
+                    'request_id' => $requestId,
+                    'packing_slip_id' => $packingSlipId,
+                    'data' => $raw,
+                ], 422);
             }
 
             return response()->json([
                 'status' => true,
-                'message' => 'GRN posted successfully.',
-                'journal_id' => $saved?->id,
-                'data' => $result,
+                'message' => $infoMessage ?: 'Packing slip posted successfully.',
+                'request_id' => $requestId,
+                'packing_slip_id' => $packingSlipId,
+                'data' => $raw,
             ]);
         } catch (Throwable $e) {
             report($e);
@@ -221,109 +220,257 @@ class GrnController extends Controller
         }
     }
 
-    private function normalizeHeaders(array $result): array
+    private function normalizeRows(array $raw): array
     {
-        $rows = $this->extractRows($result);
+        $rows = $this->extractRows($raw);
 
-        return array_values(array_filter(array_map(function ($row) {
-            if (!is_array($row)) {
-                return null;
+        return array_map(function (array $row) {
+            $purchIdLookupId = $this->pickValue($row, ['$id', 'id']);
+            $purchIdLookupPurchId = $this->pickValue($row, ['Purch Id', 'PurchId', 'Purch_Id']);
+            $purchIdLookupName = $this->pickValue($row, ['Purch name', 'PurchName', 'Purch_Name']);
+            $purchIdLookupWarehouse = $this->pickValue($row, ['Project Warehouse', 'ProjectWarehouse', 'Warehouse']);
+
+            if ($purchIdLookupPurchId !== null || $purchIdLookupName !== null || $purchIdLookupWarehouse !== null) {
+                return [
+                    'purchase_order'    => $purchIdLookupPurchId ?: '-',
+                    'project_id'        => $purchIdLookupWarehouse ?: '-',
+                    'vendor_name'       => $purchIdLookupName ?: '-',
+                    'row_id'            => $purchIdLookupId ?: '-',
+                    '_raw'              => $row,
+                ];
             }
 
-            $requestId = (string) ($row['RequestID'] ?? $row['RequestId'] ?? $row['request_id'] ?? '');
-            $packingSlipId = (string) ($row['PackingSlipID'] ?? $row['PackingSlipId'] ?? $row['packing_slip_id'] ?? '');
-            $purchId = (string) ($row['PurchId'] ?? $row['PurchID'] ?? $row['purch_id'] ?? '');
-            $packingSlipDate = (string) ($row['PackingSlipDate'] ?? $row['DocumentDate'] ?? $row['packing_slip_date'] ?? '');
-            $vendorName = (string) ($row['VendName'] ?? $row['VendorName'] ?? $row['vendor_name'] ?? '');
-            $projectId = (string) ($row['ProjId'] ?? $row['ProjectId'] ?? $row['project_id'] ?? '');
-
-            if ($purchId === '' && $requestId === '') {
-                return null;
-            }
+            $dataArea = $this->pickValue($row, ['DataAreaId', 'dataAreaId', 'DataArea', 'Company']);
+            $requestId = $this->pickValue($row, ['RequestID', 'RequestId', 'ReqId', 'RequisitionId']);
+            $packingSlipId = $this->pickValue($row, ['PackingSlipID', 'PackingSlipId', 'PackSlipId', 'SlipId']);
+            $purchaseId = $this->pickValue($row, ['PurchId', 'PurchaseId', 'POId', 'PONumber']);
+            $userName = $this->pickValue($row, ['UserName', 'UserId', 'CreatedBy', 'Worker', 'RequestedBy']);
 
             return [
-                'request_id' => $requestId,
-                'packing_slip_id' => $packingSlipId,
-                'purch_id' => $purchId,
-                'vendor_name' => $vendorName,
-                'project_id' => $projectId,
-                'packing_slip_date' => $packingSlipDate,
+                'purchase_order'    => $purchaseId ?: ($requestId ?: '-'),
+                'project_id'        => $packingSlipId ?: ($dataArea ?: '-'),
+                'vendor_name'       => $userName ?: '-',
+                'row_id'            => $requestId ?: '-',
+                '_raw'              => $row,
             ];
-        }, $rows)));
+        }, $rows);
     }
 
-    private function normalizeLines(array $result): array
+    private function applySearchFilters(array $rows, string $purchId, string $vendName, string $projId): array
     {
-        $rows = $this->extractRows($result);
+        $purchNeedle = $this->normalizeForMatch($purchId);
+        $vendorNeedle = $this->normalizeForMatch($vendName);
+        $projectNeedle = $this->normalizeForMatch($projId);
 
-        return array_values(array_filter(array_map(function ($row) {
-            if (!is_array($row)) {
-                return null;
-            }
-
-            $lineNumber = $row['LineNumber'] ?? $row['LineNum'] ?? $row['line_number'] ?? null;
-            $recId = $row['PurchLineRecId'] ?? $row['PurchLineRecID'] ?? $row['purch_line_rec_id'] ?? null;
-            $itemId = (string) ($row['ItemId'] ?? $row['ItemID'] ?? $row['item_id'] ?? '');
-            $itemName = (string) ($row['ItemName'] ?? $row['Name'] ?? $row['item_name'] ?? '');
-            $orderedQty = $row['PurchQty'] ?? $row['OrderedQty'] ?? $row['ordered_qty'] ?? '';
-            $remainingQty = $row['RemainPurchPhysical'] ?? $row['RemainingQty'] ?? $row['remaining_qty'] ?? '';
-            $receiveNow = $row['ReceiveNow'] ?? $row['receive_now'] ?? $remainingQty ?? 0;
-
-            if ($lineNumber === null || $recId === null) {
-                return null;
-            }
-
-            return [
-                'line_number' => (int) $lineNumber,
-                'purch_line_rec_id' => (float) $recId,
-                'item_id' => $itemId,
-                'item_name' => $itemName,
-                'ordered_qty' => is_numeric($orderedQty) ? (float) $orderedQty : $orderedQty,
-                'remaining_qty' => is_numeric($remainingQty) ? (float) $remainingQty : $remainingQty,
-                'receive_now' => (float) $receiveNow,
-            ];
-        }, $rows)));
-    }
-
-    private function extractRows(array $result): array
-    {
-        if (array_is_list($result)) {
-            return $result;
+        if ($purchNeedle === '' && $vendorNeedle === '' && $projectNeedle === '') {
+            return $rows;
         }
 
-        foreach (['data', 'value', 'rows', 'result'] as $key) {
-            if (isset($result[$key]) && is_array($result[$key])) {
-                return $result[$key];
-            }
-        }
+        return array_values(array_filter($rows, function (array $row) use ($purchNeedle, $vendorNeedle, $projectNeedle) {
+            $purchaseOrder = $this->normalizeForMatch((string) ($row['purchase_order'] ?? ''));
+            $vendor = $this->normalizeForMatch((string) ($row['vendor_name'] ?? ''));
+            $project = $this->normalizeForMatch((string) ($row['project_id'] ?? ''));
 
-        return [];
+            $matchPurch = $purchNeedle === '' || str_contains($purchaseOrder, $purchNeedle);
+            $matchVendor = $vendorNeedle === '' || $this->matchesLooseTokens($vendor, $vendorNeedle);
+            $matchProject = $projectNeedle === '' || str_contains($project, $projectNeedle);
+
+            return $matchPurch && $matchVendor && $matchProject;
+        }));
     }
 
-    private function isFailedD365Response(array $result): bool
+    private function normalizeForMatch(string $value): string
     {
-        if (array_key_exists('Success', $result)) {
-            return $result['Success'] === false;
-        }
-
-        return false;
+        $value = mb_strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9\s]+/u', ' ', $value) ?? $value;
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        return trim($value);
     }
 
-    private function extractD365ErrorMessage(array $result): string
+    private function matchesLooseTokens(string $haystack, string $needle): bool
     {
-        $parts = [];
+        if ($needle === '') {
+            return true;
+        }
+        if (str_contains($haystack, $needle)) {
+            return true;
+        }
 
-        foreach (['ErrorMessage', 'InfoMessage', 'Message', 'message'] as $key) {
-            if (!isset($result[$key]) || !is_scalar($result[$key])) {
+        $hayTokens = array_values(array_filter(explode(' ', $haystack)));
+        $needleTokens = array_values(array_filter(explode(' ', $needle)));
+        if ($needleTokens === []) {
+            return true;
+        }
+
+        foreach ($needleTokens as $token) {
+            if (mb_strlen($token) < 3) {
                 continue;
             }
 
-            $value = trim((string) $result[$key]);
-            if ($value !== '') {
-                $parts[] = $value;
+            $found = false;
+            foreach ($hayTokens as $hayToken) {
+                if (str_starts_with($hayToken, $token) || levenshtein($hayToken, $token) <= 1) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                return false;
             }
         }
 
-        return $parts !== [] ? implode(' ', array_unique($parts)) : 'D365 rejected the GRN request.';
+        return true;
+    }
+
+    private function normalizeLineRows(array $raw): array
+    {
+        $rows = $this->extractRows($raw);
+
+        return array_map(function (array $row) {
+            return [
+                'line_number'    => $this->pickValue($row, ['LineNumber', 'lineNumber', 'Line']) ?: '-',
+                'item_id'        => $this->pickValue($row, ['ItemId', 'ItemID', 'itemId']) ?: '-',
+                'name'           => $this->pickValue($row, ['Name', 'ItemName', 'Description']) ?: '-',
+                'ordered_qty'    => $this->formatNumber($this->pickValue($row, ['PurchQty', 'OrderedQty', 'QtyOrdered'])),
+                'remaining_qty'  => $this->formatNumber($this->pickValue($row, ['RemainPurchPhysical', 'RemainingQty', 'RemainQty'])),
+                'receive_qty'    => '',
+                'line_rec_id'    => $this->pickValue($row, ['LineRecId', 'lineRecId', 'PurchLineRecId']) ?: '',
+                '_raw'           => $row,
+            ];
+        }, $rows);
+    }
+
+    private function extractRows(array $raw): array
+    {
+        foreach ($raw as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
+            $decoded = $this->decodeJsonString($value);
+            if (!is_array($decoded)) {
+                continue;
+            }
+            $nested = $this->extractRows($decoded);
+            if ($nested !== []) {
+                return $nested;
+            }
+        }
+
+        if (array_is_list($raw)) {
+            $rows = array_values(array_filter($raw, fn ($row) => is_array($row)));
+            if ($rows !== []) {
+                return $rows;
+            }
+        }
+
+        $containerKeys = [
+            'data', 'value', 'rows', 'result', 'results', '_response', 'response',
+            'Response', 'Result', 'return', 'Return',
+        ];
+
+        foreach ($containerKeys as $key) {
+            if (!isset($raw[$key]) || !is_array($raw[$key])) {
+                continue;
+            }
+
+            $nested = $this->extractRows($raw[$key]);
+            if ($nested !== []) {
+                return $nested;
+            }
+        }
+
+        foreach ($raw as $value) {
+            if (!is_array($value)) {
+                continue;
+            }
+
+            $nested = $this->extractRows($value);
+            if ($nested !== []) {
+                return $nested;
+            }
+        }
+
+        return $raw !== [] ? [$raw] : [];
+    }
+
+    private function pickValue(array $row, array $candidateKeys): ?string
+    {
+        $value = $this->pickValueRecursive($row, $candidateKeys);
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim((string) $value);
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function pickValueRecursive(array $source, array $candidateKeys): string|int|float|null
+    {
+        $directMap = [];
+        foreach ($source as $key => $value) {
+            if (!is_scalar($value) && $value !== null) {
+                continue;
+            }
+            $directMap[strtolower((string) $key)] = $value;
+        }
+
+        foreach ($candidateKeys as $key) {
+            $lookup = strtolower($key);
+            if (array_key_exists($lookup, $directMap)) {
+                return $directMap[$lookup];
+            }
+        }
+
+        foreach ($source as $value) {
+            if (is_string($value)) {
+                $decoded = $this->decodeJsonString($value);
+                if (is_array($decoded)) {
+                    $nested = $this->pickValueRecursive($decoded, $candidateKeys);
+                    if ($nested !== null && $nested !== '') {
+                        return $nested;
+                    }
+                }
+            }
+            if (!is_array($value)) {
+                continue;
+            }
+            $nested = $this->pickValueRecursive($value, $candidateKeys);
+            if ($nested !== null && $nested !== '') {
+                return $nested;
+            }
+        }
+
+        return null;
+    }
+
+    private function decodeJsonString(string $value): ?array
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '' || (($trimmed[0] ?? '') !== '{' && ($trimmed[0] ?? '') !== '[')) {
+            return null;
+        }
+
+        $decoded = json_decode($trimmed, true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    private function formatNumber(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '0.00';
+        }
+
+        if (!is_numeric($value)) {
+            return $value;
+        }
+
+        return number_format((float) $value, 2, '.', '');
+    }
+
+    private function generatePackingRequestId(string $purchaseId): string
+    {
+        $base = preg_replace('/[^A-Za-z0-9\-]/', '', strtoupper($purchaseId)) ?: 'REQ';
+        return $base . '-' . now()->format('YmdHisv');
     }
 }

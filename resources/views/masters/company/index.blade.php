@@ -131,7 +131,7 @@
             <a class="menu-link" href="#">Procurement &amp; Sourcing</a>
             <div class="sub">
                 <a class="menu-link" href="{{ route('modules.procurement.purch-req', $companyQuery) }}">Purchase Requisition</a>
-                <a class="menu-link" href="{{ route('grns.index', $companyQuery) }}">GRN</a>
+                <a class="menu-link" href="{{ route('modules.procurement.grn', $companyQuery) }}">GRN</a>
             </div>
         </div>
         <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}">Settings</a>

@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>GRN</title>
+    <title>Goods Receive Note</title>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: #f3f2f1; color: #323130; display: flex; min-height: 100vh; }
+        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f3f2f1; color: #323130; display: flex; min-height: 100vh; }
         .sidebar { width: 260px; background: #fff; border-right: 1px solid #edebe9; padding: 12px 0; flex-shrink: 0; }
         .logo { padding: 10px 16px 18px; border-bottom: 1px solid #edebe9; margin-bottom: 8px; font-weight: 700; }
         .label { padding: 10px 16px 4px; color: #8a8886; font-size: 11px; text-transform: uppercase; }
@@ -15,43 +15,34 @@
         .menu-link.active { background: #deecf9; color: #005a9e; }
         .sub { margin-left: 16px; padding-left: 8px; border-left: 2px solid #edebe9; }
         .main { flex: 1; padding: 12px 16px; overflow: auto; }
-        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
-        .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .title { margin: 0; font-size: 24px; font-weight: 600; }
-        .subtitle { margin: 2px 0 0; font-size: 13px; color: #605e5c; }
-        .btn { border: 1px solid #8a8886; background: #fff; color: #323130; border-radius: 2px; padding: 7px 12px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; }
-        .btn-primary { border-color: #4f6bed; background: #4f6bed; color: #fff; }
-        .body { padding: 14px 16px; }
-        .toolbar { margin-bottom: 10px; display: flex; justify-content: flex-start; gap: 8px; }
-        .filters { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 12px; }
-        .field label { display: block; margin-bottom: 5px; font-size: 12px; color: #605e5c; font-weight: 600; text-transform: uppercase; }
-        .field input { width: 100%; border: 1px solid #c8c6c4; border-radius: 6px; padding: 10px 12px; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #edebe9; padding: 10px 10px; text-align: left; font-size: 13px; }
-        th { background: #faf9f8; color: #605e5c; font-weight: 600; white-space: nowrap; }
-        .empty { text-align: center; color: #8a8886; padding: 24px 10px; }
-        .badge { background: #e7f7ed; color: #0b6a3e; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+        .page-shell { border: 1px solid #edebe9; background: #fff; border-radius: 2px; overflow: hidden; }
+        .command-bar { height: 44px; border-bottom: 1px solid #edebe9; background: #fff; display: flex; align-items: center; padding: 0 12px; }
+        .crumb { font-size: 12px; color: #605e5c; }
+        .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; }
         .hidden { display: none !important; }
-        .status { margin-bottom: 10px; padding: 8px 10px; border-radius: 2px; display: none; }
-        .status.error { display: block; background: #fde7e9; color: #a4262c; }
-        .status.success { display: block; background: #e7f7ed; color: #0b6a3e; }
-        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
-        .form-header-left, .form-header-right { display: flex; align-items: center; gap: 8px; }
-        .form-title { margin: 0; font-size: 22px; font-weight: 600; }
-        .company-select-wrap { margin-left: auto; }
-        .company-select {
-            border: 1px solid #8a8886;
-            border-radius: 2px;
-            padding: 6px 8px;
-            font-size: 12px;
-            min-width: 170px;
-            background: #fff;
-        }
+        .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; font-size: 20px; font-weight: 600; }
+        .toolbar-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .title { margin: 0; font-size: 24px; font-weight: 600; }
+        .btn { border: 1px solid #8a8886; background: #fff; color: #323130; border-radius: 2px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-primary { border-color: #106ebe; background: #106ebe; color: #fff; }
+        .btn-view { border-color: #4f46e5; background: #4f46e5; color: #fff; padding: 4px 10px; font-size: 11px; }
+        .filter-grid { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
+        .field label { display: block; font-size: 12px; margin-bottom: 4px; color: #605e5c; font-weight: 500; }
+        .field input, .field select { width: 100%; border: 1px solid #8a8886; border-radius: 2px; padding: 7px 8px; font-size: 13px; background: #fff; }
+        .status-box { margin-bottom: 10px; padding: 8px 10px; border-radius: 2px; font-size: 13px; display: none; }
+        .status-box.success { display: block; background: #e8f6ee; color: #1f7a48; }
+        .status-box.error { display: block; background: #fde7e9; color: #a4262c; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #edebe9; padding: 8px 10px; text-align: left; font-size: 13px; }
+        th { color: #605e5c; font-weight: 600; background: #faf9f8; white-space: nowrap; }
+        .empty-note { text-align: center; color: #8a8886; padding: 22px 10px; font-size: 13px; }
     </style>
 </head>
 <body>
+    @include('partials.global-company-selector')
     @php
-        $companyQuery = !empty($currentCompanyCode) ? ['company' => strtoupper((string) $currentCompanyCode)] : [];
+        $companyCode = strtoupper((string) request()->query('company', ''));
+        $companyQuery = $companyCode !== '' ? ['company' => $companyCode] : [];
     @endphp
     <aside class="sidebar">
         <div class="logo">Logo</div>
@@ -65,369 +56,193 @@
             <a class="menu-link active" href="#">Procurement &amp; Sourcing</a>
             <div class="sub">
                 <a class="menu-link" href="{{ route('modules.procurement.purch-req', $companyQuery) }}">Purchase Requisition</a>
-                <a class="menu-link active" href="{{ route('grns.index', $companyQuery) }}">GRN</a>
+                <a class="menu-link active" href="{{ route('modules.procurement.grn', $companyQuery) }}">Goods Receive Note</a>
             </div>
         </div>
-        <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}">Settings</a>
+        <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}" style="display:flex;align-items:center;gap:6px;margin-top:8px;">Settings</a>
     </aside>
+
     <main class="main">
-        <div id="status-box" class="status"></div>
-
-        <section id="index-card" class="card">
-            <div class="card-head">
-                <div>
-                    <h1 class="title">GRN</h1>
-                    <p class="subtitle">Only added/posted GRNs are listed here.</p>
-                </div>
-                <div class="company-select-wrap">
-                    <select id="grn-company-select" class="company-select">
-                        @foreach($companies as $c)
-                            @php($code = strtoupper((string) $c->d365_id))
-                            <option value="{{ $code }}" {{ strtoupper((string) ($currentCompanyCode ?? '')) === $code ? 'selected' : '' }}>
-                                {{ $code }} - {{ $c->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+        <div class="page-shell">
+            <div class="command-bar">
+                <div class="crumb">Modules / Procurement &amp; Sourcing / Goods Receive Note</div>
             </div>
-            <div class="body">
-                <div class="toolbar">
-                    <button id="new-grn-btn" type="button" class="btn btn-primary">+ Create New GRN</button>
+            <div style="padding:12px;">
+                <div class="toolbar-row">
+                    <h1 class="title">Goods Receive Note</h1>
+                    <button id="search-btn" type="button" class="btn btn-primary">Search from D365</button>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Request ID</th>
-                            <th>Packing Slip ID</th>
-                            <th>Purch ID</th>
-                            <th>Vendor</th>
-                            <th>Project</th>
-                            <th>Status</th>
-                            <th>Created At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($journals as $j)
-                            <tr>
-                                <td>{{ $j->request_id ?: '—' }}</td>
-                                <td>{{ $j->packing_slip_id ?: '—' }}</td>
-                                <td>{{ $j->purch_id ?: '—' }}</td>
-                                <td>{{ $j->vendor_name ?: '—' }}</td>
-                                <td>{{ $j->project_id ?: '—' }}</td>
-                                <td><span class="badge">Posted</span></td>
-                                <td>{{ optional($j->created_at)->format('d M Y H:i') }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="7" class="empty">No added GRN records.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
 
-        <section id="search-card" class="card hidden">
-            <div class="body">
-                <div class="form-header">
-                    <div class="form-header-left">
-                        <button id="back-to-index-btn" class="btn" type="button">← Back</button>
-                        <h2 class="form-title">Purchase Orders</h2>
-                    </div>
-                    <div class="form-header-right">
-                        <button id="search-btn" type="button" class="btn btn-primary">Search</button>
-                    </div>
-                </div>
-                <p class="subtitle" style="margin:0 0 12px;">Fill any one, two, or all fields and search.</p>
-                <div class="filters">
+                <div id="status-box" class="status-box"></div>
+
+                <div class="filter-grid">
                     <div class="field">
-                        <label>Purch ID</label>
-                        <input id="search-purch-id" type="text" placeholder="PS-PO25-005298">
+                        <label>Company <span style="color:#a4262c">*</span></label>
+                        <select id="company">
+                            <option value="">— select —</option>
+                            @foreach($companies as $c)
+                                <option value="{{ $c->d365_id }}">{{ $c->d365_id }} - {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Purchase ID</label>
+                        <input id="purch-id" type="text" placeholder="e.g. PO12345">
                     </div>
                     <div class="field">
                         <label>Vendor Name</label>
-                        <input id="search-vendor-name" type="text" placeholder="Vendor name">
+                        <input id="vend-name" type="text" placeholder="e.g. Gulf Supplies">
                     </div>
                     <div class="field">
                         <label>Project ID</label>
-                        <input id="search-project-id" type="text" placeholder="PIE20241002">
+                        <input id="proj-id" type="text" placeholder="e.g. PRJ-001">
                     </div>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Purchase Order</th>
-                            <th>Project ID</th>
-                            <th>Vendor Name</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="search-results-body">
-                        <tr><td colspan="5" class="empty">Search to load records.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
 
-        <section id="detail-card" class="hidden">
-            <div class="form-header" style="margin-bottom:12px;">
-                <div class="form-header-left">
-                    <button id="back-to-search-btn" type="button" class="btn">← Back</button>
+                <div id="results-card" class="card hidden">
+                    <div class="card-head">GRN Results</div>
+                    <div style="overflow:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Purchase Order</th>
+                                    <th>Project ID</th>
+                                    <th>Vendor Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-body">
+                                <tr><td colspan="5" class="empty-note">Search to load records from D365.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="form-header-right">
-                    <button id="post-btn" type="button" class="btn btn-primary">Post</button>
-                </div>
-            </div>
 
-            <div class="card">
-                <div class="body">
-                    <div style="margin-bottom:12px;">
-                        <div style="font-size:12px;color:#605e5c;">Purchase Order</div>
-                        <div id="detail-po-title" style="font-size:36px;font-weight:700;">-</div>
-                        <div style="font-size:12px;color:#605e5c;">Vendor: <span id="detail-vendor-title">-</span></div>
-                    </div>
-                    <div class="filters" style="grid-template-columns:1fr 1fr 1fr;">
-                        <div class="field"><label>Purchase Order</label><input id="detail-purch-id" type="text" readonly></div>
-                        <div class="field"><label>Vendor</label><input id="detail-vendor-name" type="text" readonly></div>
-                        <div class="field"><label>Project</label><input id="detail-project-id" type="text" readonly></div>
-                    </div>
-                    <div class="filters" style="grid-template-columns:1fr 1fr;">
-                        <div class="field"><label>Packing Slip ID</label><input id="detail-packing-slip-id" type="text"></div>
-                        <div class="field"><label>Document Date</label><input id="detail-document-date" type="date"></div>
-                    </div>
-                </div>
             </div>
-
-            <div class="card">
-                <div class="card-head"><h3 style="margin:0;font-size:30px;">Line Items</h3></div>
-                <div class="body">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Line</th>
-                                <th>Item</th>
-                                <th>Name</th>
-                                <th>Ordered Qty</th>
-                                <th>Remaining Qty</th>
-                                <th>Receive Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody id="detail-lines-body">
-                            <tr><td colspan="6" class="empty">No lines loaded.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+        </div>
     </main>
 
     <script>
-    (() => {
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
-        const selectedCompany = () => document.getElementById('grn-company-select')?.value || '{{ $currentCompanyCode ?? "" }}';
+        const els = {
+            company: document.getElementById('company'),
+            purchId: document.getElementById('purch-id'),
+            vendName: document.getElementById('vend-name'),
+            projId: document.getElementById('proj-id'),
+            searchBtn: document.getElementById('search-btn'),
+            statusBox: document.getElementById('status-box'),
+            resultsBody: document.getElementById('results-body'),
+            resultsCard: document.getElementById('results-card'),
+        };
 
-        const statusBox = document.getElementById('status-box');
-        const indexCard = document.getElementById('index-card');
-        const searchCard = document.getElementById('search-card');
-        const detailCard = document.getElementById('detail-card');
-
-        const searchPurchIdEl = document.getElementById('search-purch-id');
-        const searchVendorNameEl = document.getElementById('search-vendor-name');
-        const searchProjectIdEl = document.getElementById('search-project-id');
-        const searchResultsBody = document.getElementById('search-results-body');
-
-        const detailPoTitleEl = document.getElementById('detail-po-title');
-        const detailVendorTitleEl = document.getElementById('detail-vendor-title');
-        const detailPurchIdEl = document.getElementById('detail-purch-id');
-        const detailVendorNameEl = document.getElementById('detail-vendor-name');
-        const detailProjectIdEl = document.getElementById('detail-project-id');
-        const detailPackingSlipIdEl = document.getElementById('detail-packing-slip-id');
-        const detailDocumentDateEl = document.getElementById('detail-document-date');
-        const detailLinesBody = document.getElementById('detail-lines-body');
-
-        let selectedHeader = null;
-
-        function showStatus(message, type) {
-            statusBox.className = 'status ' + type;
-            statusBox.textContent = message;
-        }
-        function clearStatus() {
-            statusBox.className = 'status';
-            statusBox.textContent = '';
-        }
-        function esc(v) {
-            return String(v ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-        function showIndex() {
-            clearStatus();
-            indexCard.classList.remove('hidden');
-            searchCard.classList.add('hidden');
-            detailCard.classList.add('hidden');
-        }
-        function showSearch() {
-            clearStatus();
-            indexCard.classList.add('hidden');
-            searchCard.classList.remove('hidden');
-            detailCard.classList.add('hidden');
-        }
-        function showDetail() {
-            clearStatus();
-            indexCard.classList.add('hidden');
-            searchCard.classList.add('hidden');
-            detailCard.classList.remove('hidden');
+        function setStatus(type, text) {
+            els.statusBox.className = 'status-box ' + (type || '');
+            els.statusBox.textContent = text || '';
         }
 
-        async function postJson(url, payload) {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-            if (!res.ok || !data.status) throw new Error(data.error || data.message || 'Request failed.');
-            return data;
-        }
-
-        async function searchHeaders() {
-            clearStatus();
-            const purchId = searchPurchIdEl.value.trim();
-            const vendorName = searchVendorNameEl.value.trim();
-            const projectId = searchProjectIdEl.value.trim();
-
-            if (!purchId && !vendorName && !projectId) {
-                showStatus('Please fill at least one search field.', 'error');
+        function renderRows(rows) {
+            if (!Array.isArray(rows) || rows.length === 0) {
+                els.resultsBody.innerHTML = '<tr><td colspan="5" class="empty-note">No records found.</td></tr>';
                 return;
             }
 
-            try {
-                const data = await postJson('{{ route("modules.procurement.grn.api.headers") }}', {
-                    company: selectedCompany(),
-                    purch_id: purchId,
-                    vendor_name: vendorName,
+            els.resultsBody.innerHTML = rows.map((row, i) => {
+                const purchaseOrder = row.purchase_order || '-';
+                const projectId = row.project_id || '-';
+                const vendorName = row.vendor_name || '-';
+                const rowPayload = encodeURIComponent(JSON.stringify({
+                    purchase_order: purchaseOrder,
                     project_id: projectId,
-                });
+                    vendor_name: vendorName
+                }));
 
-                const rows = Array.isArray(data.rows) ? data.rows : [];
-                if (!rows.length) {
-                    searchResultsBody.innerHTML = '<tr><td colspan="5" class="empty">No purchase orders found.</td></tr>';
-                    return;
-                }
-
-                searchResultsBody.innerHTML = rows.map((r, i) => `
+                return `
                     <tr>
                         <td>${i + 1}</td>
-                        <td>${esc(r.purch_id)}</td>
-                        <td>${esc(r.project_id)}</td>
-                        <td>${esc(r.vendor_name)}</td>
-                        <td><button class="btn btn-primary view-po-btn" type="button" data-row="${esc(encodeURIComponent(JSON.stringify(r)))}">View</button></td>
+                        <td>${purchaseOrder}</td>
+                        <td>${projectId}</td>
+                        <td>${vendorName}</td>
+                        <td><button type="button" class="btn btn-view" data-row="${rowPayload}">View</button></td>
                     </tr>
-                `).join('');
-            } catch (err) {
-                showStatus(err.message, 'error');
-            }
-        }
+                `;
+            }).join('');
 
-        async function openDetail(row) {
-            selectedHeader = row;
-            detailPoTitleEl.textContent = row.purch_id || '-';
-            detailVendorTitleEl.textContent = row.vendor_name || '-';
-            detailPurchIdEl.value = row.purch_id || '';
-            detailVendorNameEl.value = row.vendor_name || '';
-            detailProjectIdEl.value = row.project_id || '';
-            detailPackingSlipIdEl.value = row.packing_slip_id || '';
-            detailDocumentDateEl.value = row.packing_slip_date || new Date().toISOString().slice(0, 10);
-
-            const data = await postJson('{{ route("modules.procurement.grn.api.lines") }}', {
-                company: selectedCompany(),
-                purch_id: row.purch_id || '',
-                request_id: row.request_id || '',
-                vendor_name: row.vendor_name || '',
-                project_id: row.project_id || '',
-            });
-            const rows = Array.isArray(data.rows) ? data.rows : [];
-            if (!rows.length) {
-                detailLinesBody.innerHTML = '<tr><td colspan="6" class="empty">No lines found.</td></tr>';
-            } else {
-                detailLinesBody.innerHTML = rows.map((l) => `
-                    <tr>
-                        <td>${esc(l.line_number)}</td>
-                        <td>${esc(l.item_id)}</td>
-                        <td>${esc(l.item_name)}</td>
-                        <td>${esc(l.ordered_qty)}</td>
-                        <td>${esc(l.remaining_qty)}</td>
-                        <td><input class="line-receive" type="number" min="0" step="any" value="${esc(l.receive_now)}" data-line="${esc(l.line_number)}" data-rec="${esc(l.purch_line_rec_id)}" style="width:100%;border:1px solid #c8c6c4;border-radius:6px;padding:8px 10px;"></td>
-                    </tr>
-                `).join('');
-            }
-            showDetail();
-        }
-
-        async function postGrn() {
-            clearStatus();
-            if (!selectedHeader) return showStatus('No selected PO.', 'error');
-            if (!detailPackingSlipIdEl.value.trim()) return showStatus('Packing Slip ID is required.', 'error');
-            if (!detailDocumentDateEl.value) return showStatus('Document Date is required.', 'error');
-
-            const lines = Array.from(detailLinesBody.querySelectorAll('.line-receive')).map((el) => ({
-                line_number: Number(el.dataset.line || 0),
-                purch_line_rec_id: Number(el.dataset.rec || 0),
-                receive_now: Number(el.value || 0),
-            }));
-            if (!lines.length) return showStatus('No lines to post.', 'error');
-
-            try {
-                await postJson('{{ route("modules.procurement.grn.api.post") }}', {
-                    company: selectedCompany(),
-                    request_id: selectedHeader.request_id || `${selectedHeader.purch_id || 'REQ'}-${Date.now()}`,
-                    packing_slip_date: detailDocumentDateEl.value,
-                    purch_id: selectedHeader.purch_id || '',
-                    project_id: selectedHeader.project_id || '',
-                    vendor_name: selectedHeader.vendor_name || '',
-                    packing_slip_id: detailPackingSlipIdEl.value.trim(),
-                    lines,
+            els.resultsBody.querySelectorAll('.btn-view').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const rowPayload = btn.getAttribute('data-row') || '';
+                    if (!rowPayload) return;
+                    let row;
+                    try {
+                        row = JSON.parse(decodeURIComponent(rowPayload));
+                    } catch (_) {
+                        setStatus('error', 'Unable to read selected row.');
+                        return;
+                    }
+                    const params = new URLSearchParams({
+                        company: (els.company.value || '').trim(),
+                        purchase_id: row.purchase_order || '',
+                        vendor_name: row.vendor_name || '',
+                        project_id: row.project_id || '',
+                    });
+                    window.location.href = `{{ route('modules.procurement.grn.view') }}?${params.toString()}`;
                 });
-                showStatus('GRN posted successfully.', 'success');
-                window.location.reload();
-            } catch (err) {
-                showStatus(err.message, 'error');
-            }
+            });
         }
 
-        document.getElementById('new-grn-btn').addEventListener('click', showSearch);
-        document.getElementById('back-to-index-btn').addEventListener('click', showIndex);
-        document.getElementById('back-to-search-btn').addEventListener('click', showSearch);
-        document.getElementById('search-btn').addEventListener('click', searchHeaders);
-        document.getElementById('post-btn').addEventListener('click', postGrn);
-        document.getElementById('grn-company-select').addEventListener('change', (e) => {
-            const company = (e.target.value || '').trim();
-            const url = new URL(window.location.href);
-            if (company) url.searchParams.set('company', company);
-            else url.searchParams.delete('company');
-            window.location.href = url.toString();
-        });
-        searchResultsBody.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.view-po-btn');
-            if (!btn) return;
+        async function searchGrn() {
+            const company = (els.company.value || '').trim();
+            if (!company) {
+                setStatus('error', 'Please select company.');
+                return;
+            }
+
+            els.searchBtn.disabled = true;
+            els.searchBtn.textContent = 'Searching...';
+            setStatus('', '');
+            els.resultsCard.classList.remove('hidden');
+            els.resultsBody.innerHTML = '<tr><td colspan="5" class="empty-note">Loading...</td></tr>';
+
             try {
-                const row = JSON.parse(decodeURIComponent(btn.dataset.row || ''));
-                await openDetail(row);
-            } catch (err) {
-                showStatus('Unable to open selected row.', 'error');
-            }
-        });
+                const resp = await fetch("{{ route('modules.procurement.grn.api.search') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        company,
+                        purch_id: (els.purchId.value || '').trim(),
+                        vend_name: (els.vendName.value || '').trim(),
+                        proj_id: (els.projId.value || '').trim(),
+                    }),
+                });
 
-        if (window.location.hash === '#new') {
-            showSearch();
+                const data = await resp.json();
+                if (!resp.ok || data.status === false) {
+                    throw new Error(data.message || data.error || 'GRN lookup failed.');
+                }
+
+                renderRows(data.rows || []);
+                setStatus('success', `Loaded ${Array.isArray(data.rows) ? data.rows.length : 0} record(s).`);
+            } catch (e) {
+                setStatus('error', e.message || 'GRN lookup failed.');
+                els.resultsBody.innerHTML = '<tr><td colspan="5" class="empty-note">Unable to load data.</td></tr>';
+            } finally {
+                els.searchBtn.disabled = false;
+                els.searchBtn.textContent = 'Search from D365';
+            }
         }
-    })();
+
+        els.searchBtn.addEventListener('click', searchGrn);
+        [els.purchId, els.vendName, els.projId].forEach((input) => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchGrn();
+                }
+            });
+        });
     </script>
 </body>
 </html>
