@@ -130,16 +130,8 @@
                 </div>
 
                 <div id="grn-search-shell" class="hidden">
+                    <input id="company" type="hidden" value="{{ strtoupper((string) ($currentCompanyCode ?? '')) }}">
                     <div class="filter-grid">
-                        <div class="field">
-                            <label>Company <span style="color:#a4262c">*</span></label>
-                            <select id="company">
-                                <option value="">— select —</option>
-                                @foreach($companies as $c)
-                                    <option value="{{ $c->d365_id }}">{{ $c->d365_id }} - {{ $c->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
                         <div class="field">
                             <label>Purchase ID</label>
                             <input id="purch-id" type="text" placeholder="e.g. PO12345">

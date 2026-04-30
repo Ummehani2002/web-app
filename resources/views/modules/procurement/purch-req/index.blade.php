@@ -171,16 +171,8 @@
 
                     <div id="status-box" class="status-box"></div>
 
+                    <input id="company" type="hidden" value="{{ strtoupper((string) ($currentCompanyCode ?? '')) }}">
                     <div class="fields">
-                        <div class="field">
-                            <label>Company <span style="color:#a4262c">*</span></label>
-                            <select id="company">
-                                <option value="">— select —</option>
-                                @foreach($companies as $c)
-                                    <option value="{{ $c->d365_id }}" {{ strtoupper((string) ($currentCompanyCode ?? '')) === strtoupper((string) $c->d365_id) ? 'selected' : '' }}>{{ $c->d365_id }} – {{ $c->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
                         <div class="field">
                             <label>Buying Legal Entity</label>
                             <select id="buying-legal-entity">
@@ -455,19 +447,17 @@
             return `<option value="">—</option>${options}`;
         }
 
-        function renderItemOptions(selectedItemId = '') {
-            const selectedKey = String(selectedItemId ?? '').trim().toLowerCase();
+        function renderItemOptions() {
             const options = itemCatalog.items.map((item) => {
                 const id = String(item.id ?? '').trim();
                 const name = String(item.name ?? '').trim();
                 const category = String(item.category ?? '').trim();
-                const selectedAttr = id.toLowerCase() === selectedKey ? ' selected' : '';
                 const label = name ? `${id} - ${name}` : id;
                 const labelWithCategory = category ? `${label} (${category})` : label;
-                return `<option value="${escapeHtml(id)}"${selectedAttr}>${escapeHtml(labelWithCategory)}</option>`;
+                return `<option value="${escapeHtml(id)}">${escapeHtml(labelWithCategory)}</option>`;
             }).join('');
 
-            return `<option value="">—</option>${options}`;
+            return options;
         }
 
         function updateLineCategoryFromItem(tr) {
@@ -482,10 +472,13 @@
         }
 
         function updateItemSelectForRow(tr, preferredItemId = '') {
-            const itemSelect = tr.querySelector('.lf-item-id');
-            if (!itemSelect) return;
+            const itemInput = tr.querySelector('.lf-item-id');
+            const itemList = tr.querySelector('.lf-item-id-list');
+            if (!itemInput || !itemList) return;
 
-            itemSelect.innerHTML = renderItemOptions(preferredItemId);
+            const previousValue = itemInput.value;
+            itemList.innerHTML = renderItemOptions();
+            itemInput.value = preferredItemId || previousValue || '';
         }
 
         function renumberLines() {
@@ -528,7 +521,10 @@
                 </td>
                 <td style="text-align:center;"><span class="line-serial"></span></td>
                 <td><select class="line-select lf-category">${catOptions}</select></td>
-                <td><select class="line-select lf-item-id item-id"></select></td>
+                <td>
+                    <input class="line-input item-id lf-item-id" type="text" list="lf-item-id-list-${lineId}" placeholder="Type Item ID to search">
+                    <datalist id="lf-item-id-list-${lineId}" class="lf-item-id-list"></datalist>
+                </td>
                 <td><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
                 <td><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
                 <td>
@@ -716,6 +712,13 @@
             }
         });
 
+        linesBody.addEventListener('input', (e) => {
+            if (!e.target.classList.contains('lf-item-id')) return;
+            const tr = e.target.closest('tr');
+            if (!tr) return;
+            updateLineCategoryFromItem(tr);
+        });
+
         linesBody.addEventListener('blur', (e) => {
             if (e.target.classList.contains('lf-item-id')) {
                 const tr = e.target.closest('tr');
@@ -779,7 +782,7 @@
             }
         }
 
-        companyEl.addEventListener('change', () => {
+        companyEl?.addEventListener('change', () => {
             const companyCode = (companyEl.value || '').trim().toUpperCase();
             if (buyingLegalEntityEl && ['TM', 'PS'].includes(companyCode)) {
                 buyingLegalEntityEl.value = companyCode;
@@ -1132,7 +1135,10 @@
         function resetForm() {
             prNoEl.value        = '';
             requestIdEl.value   = '';
-            if (buyingLegalEntityEl) buyingLegalEntityEl.value = '';
+            if (buyingLegalEntityEl) {
+                const companyCode = (companyEl?.value || '').trim().toUpperCase();
+                buyingLegalEntityEl.value = ['TM', 'PS'].includes(companyCode) ? companyCode : '';
+            }
             prDateEl.value      = todayStr();
             warehouseEl.value   = '';
             poolIdEl.value      = '';
@@ -1205,7 +1211,7 @@
 
                 const j = payload.data;
                 resetForm();
-                companyEl.value = j.company || '';
+                companyEl.value = j.company || companyEl.value || '';
                 buyingLegalEntityEl.value = j.buying_legal_entity || '';
                 await loadCatalogForCompany(j.company || '');
                 requestIdEl.value = j.request_id || '';

@@ -175,14 +175,7 @@
                             <label>Journal ID</label>
                             <input id="journal-id" type="text" value="Not Yet Posted" readonly>
                         </div>
-                        <div class="field">
-                            <label>Company</label>
-                            <select id="company-id">
-                                @foreach($companies as $company)
-                                    <option value="{{ strtoupper((string) $company->d365_id) }}" @selected(strtoupper((string) $currentCompanyCode) === strtoupper((string) $company->d365_id))>{{ strtoupper((string) $company->d365_id) }} – {{ $company->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        <input id="company-id" type="hidden" value="{{ strtoupper((string) ($currentCompanyCode ?? '')) }}">
                         <div class="field">
                             <label>Project</label>
                             <select id="project-id">
@@ -539,7 +532,7 @@
         });
  
         /* ── Company change → clear cached items ──────────────────────── */
-        companySelect.addEventListener('change', () => {
+        companySelect?.addEventListener('change', () => {
             const url = new URL(window.location.href);
             url.searchParams.set('company', companySelect.value);
             window.location.href = url.toString();
