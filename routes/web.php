@@ -18,6 +18,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\WarehouseMasterController;
 use App\Http\Controllers\Api\SizeController;
 use App\Http\Controllers\Api\SiteController;
+use App\Http\Controllers\Api\PoolController as ApiPoolController;
 
 /*
 |--------------------------------------------------------------------------
@@ -121,6 +122,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');
         Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
         Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
+        Route::get('/pools', [ApiPoolController::class, 'index'])->name('pools.index');
+        Route::post('/pools', [ApiPoolController::class, 'store'])->name('pools.store');
+        Route::delete('/pools/{pool}', [ApiPoolController::class, 'destroy'])->name('pools.destroy');
     });
 
     Route::get('/modules/project-management/item-issue', [ItemIssueController::class, 'index'])
