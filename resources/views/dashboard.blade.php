@@ -183,6 +183,7 @@
                     <a class="nav-link {{ request()->routeIs('masters.currencies.index') ? 'active' : '' }}" href="{{ route('masters.currencies.index', $companyQuery) }}">Currencies</a>
                     <a class="nav-link {{ request()->routeIs('masters.units.index') ? 'active' : '' }}" href="{{ route('masters.units.index', $companyQuery) }}">Units</a>
                     <a class="nav-link {{ request()->routeIs('masters.project.index') ? 'active' : '' }}" href="{{ route('masters.project.index', $companyQuery) }}">Projects</a>
+                    <a class="nav-link {{ request()->routeIs('masters.pools.index') ? 'active' : '' }}" href="{{ route('masters.pools.index', $companyQuery) }}">Pools</a>
                     <a class="nav-link {{ request()->routeIs('masters.batches.index') ? 'active' : '' }}" href="{{ route('masters.batches.index', $companyQuery) }}">Batches</a>
                     <a class="nav-link {{ request()->routeIs('masters.sales-tax-groups.index') ? 'active' : '' }}" href="{{ route('masters.sales-tax-groups.index', $companyQuery) }}">Sales Tax Groups</a>
                     <a class="nav-link {{ request()->routeIs('masters.item-sales-tax-groups.index') ? 'active' : '' }}" href="{{ route('masters.item-sales-tax-groups.index', $companyQuery) }}">Item Sales Tax Groups</a>
