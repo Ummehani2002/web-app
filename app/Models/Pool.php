@@ -11,7 +11,7 @@ class Pool extends Model
     use HasFactory;
 
     protected $fillable = [
-        'd365_pool_id',
+        'pool_id',
         'name',
         'company_id',
     ];

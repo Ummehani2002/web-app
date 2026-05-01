@@ -117,8 +117,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="d365_pool_id">Pool ID</label>
-                    <input id="d365_pool_id" name="d365_pool_id" type="text" maxlength="100" required placeholder="Pool ID">
+                    <label for="pool_id">Pool ID</label>
+                    <input id="pool_id" name="pool_id" type="text" maxlength="100" required placeholder="Pool ID">
                 </div>
                 <div>
                     <label for="name">Pool name</label>
@@ -231,7 +231,7 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>${escapeHtml(p.company_id ?? '-')}</td>
-                        <td>${escapeHtml(p.d365_pool_id ?? '-')}</td>
+                        <td>${escapeHtml(p.pool_id ?? '-')}</td>
                         <td>${escapeHtml(p.name ?? '-')}</td>
                         <td>${formatDate(p.created_at)}</td>
                         <td>
@@ -253,7 +253,7 @@
 
             const body = {
                 company_id: companySelect.value.trim(),
-                d365_pool_id: document.getElementById('d365_pool_id').value.trim(),
+                pool_id: document.getElementById('pool_id').value.trim(),
                 name: document.getElementById('name').value.trim(),
             };
 
@@ -277,7 +277,7 @@
                 }
 
                 setFormMessage(statusEl, 'Pool created.', true);
-                document.getElementById('d365_pool_id').value = '';
+                document.getElementById('pool_id').value = '';
                 document.getElementById('name').value = '';
                 await loadPools();
             } catch {

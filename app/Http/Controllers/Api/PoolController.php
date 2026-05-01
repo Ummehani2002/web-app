@@ -12,14 +12,16 @@ class PoolController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->normalizeLegacyPoolIdInput($request);
+
         $query = Pool::query();
 
         if ($request->filled('company_id')) {
             $query->where('company_id', trim((string) $request->input('company_id')));
         }
 
-        if ($request->filled('d365_pool_id')) {
-            $query->where('d365_pool_id', trim((string) $request->input('d365_pool_id')));
+        if ($request->filled('pool_id')) {
+            $query->where('pool_id', trim((string) $request->input('pool_id')));
         }
 
         return response()->json([
@@ -31,6 +33,7 @@ class PoolController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeLegacyPoolIdInput($request);
         $payload = $this->validatePayload($request);
         $pool = Pool::create($payload);
 
@@ -61,6 +64,7 @@ class PoolController extends Controller
 
     public function update(Request $request, string $pool): JsonResponse
     {
+        $this->normalizeLegacyPoolIdInput($request);
         $resolved = $this->resolvePool($pool);
 
         if (! $resolved) {
@@ -101,14 +105,16 @@ class PoolController extends Controller
 
     public function syncFromD365(Request $request): JsonResponse
     {
+        $this->normalizeLegacyPoolIdInput($request);
+
         $validated = $request->validate([
-            'd365_pool_id' => ['required', 'string', 'max:100'],
+            'pool_id' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'company_id' => ['required', 'string', 'max:100'],
         ]);
 
         $pool = Pool::updateOrCreate(
-            ['d365_pool_id' => trim($validated['d365_pool_id'])],
+            ['pool_id' => trim($validated['pool_id'])],
             [
                 'name' => trim($validated['name']),
                 'company_id' => trim($validated['company_id']),
@@ -120,6 +126,23 @@ class PoolController extends Controller
             'message' => 'Pool synced successfully.',
             'data' => $pool,
         ]);
+    }
+
+    /**
+     * Accept legacy JSON key `d365_pool_id` as an alias for `pool_id`.
+     */
+    private function normalizeLegacyPoolIdInput(Request $request): void
+    {
+        if ($request->filled('d365_pool_id') && ! $request->filled('pool_id')) {
+            $request->merge([
+                'pool_id' => $request->input('d365_pool_id'),
+            ]);
+        }
+
+        $queryBag = $request->query();
+        if (isset($queryBag['d365_pool_id']) && ! isset($queryBag['pool_id'])) {
+            $request->query->set('pool_id', (string) $queryBag['d365_pool_id']);
+        }
     }
 
     private function resolvePool(mixed $value): ?Pool
@@ -141,25 +164,25 @@ class PoolController extends Controller
             }
         }
 
-        return Pool::query()->where('d365_pool_id', $needle)->first();
+        return Pool::query()->where('pool_id', $needle)->first();
     }
 
     private function validatePayload(Request $request, ?Pool $pool = null): array
     {
-        $uniqueRule = Rule::unique('pools', 'd365_pool_id');
+        $uniqueRule = Rule::unique('pools', 'pool_id');
 
         if ($pool) {
             $uniqueRule->ignore($pool->id);
         }
 
         $validated = $request->validate([
-            'd365_pool_id' => ['required', 'string', 'max:100', $uniqueRule],
+            'pool_id' => ['required', 'string', 'max:100', $uniqueRule],
             'name' => ['required', 'string', 'max:255'],
             'company_id' => ['required', 'string', 'max:100'],
         ]);
 
         return [
-            'd365_pool_id' => trim($validated['d365_pool_id']),
+            'pool_id' => trim($validated['pool_id']),
             'name' => trim($validated['name']),
             'company_id' => trim($validated['company_id']),
         ];
