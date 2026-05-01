@@ -70,32 +70,11 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-head">Create Category</div>
-                    <div class="card-body">
-                        @if(session('status'))
+                    @if(session('status'))
+                        <div class="card-body">
                             <div class="status">{{ session('status') }}</div>
-                        @endif
-                        @if($errors->any())
-                            <div class="error">{{ $errors->first() }}</div>
-                        @endif
-                        <form method="post" action="{{ route('masters.categories.store', $companyQuery) }}">
-                            @csrf
-                            <div class="form-row">
-                                <div>
-                                    <label for="item_category_id">Item Category ID</label>
-                                    <input id="item_category_id" name="item_category_id" value="{{ old('item_category_id') }}" required maxlength="100" placeholder="e.g. CAT001">
-                                </div>
-                                <div>
-                                    <label for="name">Category Name</label>
-                                    <input id="name" name="name" value="{{ old('name') }}" required maxlength="255" placeholder="e.g. Building Materials">
-                                </div>
-                                <button class="btn" type="submit">Save Category</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="card">
+                        </div>
+                    @endif
                     <table>
                         <thead>
                             <tr>

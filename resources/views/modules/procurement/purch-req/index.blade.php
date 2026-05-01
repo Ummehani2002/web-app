@@ -201,10 +201,6 @@
                             <input id="warehouse" type="text" placeholder="e.g. PSE20251008">
                         </div>
                         <div class="field">
-                            <label>Pool ID <span style="color:#a4262c">*</span></label>
-                            <input id="pool-id" type="text" placeholder="e.g. P_LPO">
-                        </div>
-                        <div class="field">
                             <label>Contact Name <span style="color:#a4262c">*</span></label>
                             <input id="contact-name" type="text" placeholder="e.g. Murugan">
                         </div>
@@ -360,6 +356,7 @@
     <script>
     (() => {
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const DEFAULT_POOL_ID = 'P_LPO';
 
         const statusBox     = document.getElementById('status-box');
         const companyEl     = document.getElementById('company');
@@ -368,7 +365,6 @@
         const prNoEl        = document.getElementById('pr-no');
         const prDateEl      = document.getElementById('pr-date');
         const warehouseEl   = document.getElementById('warehouse');
-        const poolIdEl      = document.getElementById('pool-id');
         const contactEl     = document.getElementById('contact-name');
         const remarksEl     = document.getElementById('remarks');
         const departmentEl  = document.getElementById('department');
@@ -954,7 +950,6 @@
             if (!company) { showStatus('Please select a company.', 'error'); return; }
             if (!prDateEl.value) { showStatus('PR Date is required.', 'error'); return; }
             if (!warehouseEl.value.trim()) { showStatus('Warehouse is required.', 'error'); return; }
-            if (!poolIdEl.value.trim()) { showStatus('Pool ID is required.', 'error'); return; }
             if (!contactEl.value.trim()) { showStatus('Contact Name is required.', 'error'); return; }
             if (!departmentEl.value.trim()) { showStatus('Department is required.', 'error'); return; }
 
@@ -989,7 +984,7 @@
                 buying_legal_entity: (buyingLegalEntityEl?.value || company),
                 pr_date:      prDateEl.value,
                 warehouse:    warehouseEl.value.trim(),
-                pool_id:      poolIdEl.value.trim(),
+                pool_id:      DEFAULT_POOL_ID,
                 contact_name: contactEl.value.trim(),
                 remarks:      remarksEl.value.trim(),
                 department:   departmentEl.value.trim(),
@@ -1059,7 +1054,7 @@
                 buying_legal_entity: (buyingLegalEntityEl?.value || companyEl.value.trim() || null),
                 pr_date: prDateEl.value || null,
                 warehouse: warehouseEl.value.trim() || null,
-                pool_id: poolIdEl.value.trim() || null,
+                pool_id: DEFAULT_POOL_ID,
                 contact_name: contactEl.value.trim() || null,
                 remarks: remarksEl.value.trim() || null,
                 department: departmentEl.value.trim() || null,
@@ -1141,7 +1136,6 @@
             }
             prDateEl.value      = todayStr();
             warehouseEl.value   = '';
-            poolIdEl.value      = '';
             contactEl.value     = '';
             remarksEl.value     = '';
             departmentEl.value  = '';
@@ -1218,7 +1212,6 @@
                 prNoEl.value = j.pr_no || '';
                 prDateEl.value = j.pr_date || '';
                 warehouseEl.value = j.warehouse || '';
-                poolIdEl.value = j.pool_id || '';
                 contactEl.value = j.contact_name || '';
                 remarksEl.value = j.remarks || '';
                 departmentEl.value = j.department || '';

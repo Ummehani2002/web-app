@@ -407,9 +407,26 @@ class PurchReqController extends Controller
             'company' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $categories = ItemCategory::query()
-            ->select(['d365_id', 'name'])
-            ->orderBy('name')
+        $companyCode = trim((string) ($validated['company'] ?? ''));
+        $company = $companyCode !== '' ? Company::resolveFromMixed($companyCode) : null;
+
+        if ($companyCode !== '' && ! $company) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unknown company code.',
+                'errors' => ['company' => ['No company found for this DataAreaId.']],
+            ], 422);
+        }
+
+        $categoriesQuery = ItemCategory::query()
+            ->select(['company_id', 'd365_id', 'name'])
+            ->orderBy('name');
+
+        if ($company) {
+            $categoriesQuery->where('company_id', $company->id);
+        }
+
+        $categories = $categoriesQuery
             ->get()
             ->map(function (ItemCategory $category) {
                 $code = trim((string) ($category->item_category_id ?? ''));
@@ -438,6 +455,10 @@ class PurchReqController extends Controller
 
         $itemsQuery = Item::query()
             ->select(['company_id', 'd365_id', 'd365_item_id', 'item_name', 'item_category_id']);
+
+        if ($company) {
+            $itemsQuery->where('company_id', $company->id);
+        }
 
         if ($categories->isEmpty()) {
             $categories = (clone $itemsQuery)

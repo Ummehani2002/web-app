@@ -137,13 +137,12 @@
                                     <th>PR No</th>
                                     <th>Contact</th>
                                     <th>Department</th>
-                                    <th>Pool</th>
                                     <th>PR Date</th>
                                     <th>Lines</th>
                                 </tr>
                             </thead>
                             <tbody id="pr-list-body">
-                                <tr><td class="empty-note" colspan="7">No purchase requisitions yet.</td></tr>
+                                <tr><td class="empty-note" colspan="6">No purchase requisitions yet.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -188,10 +187,6 @@
                                 <td>
                                     <label class="header-label">Warehouse</label>
                                     <input id="warehouse" type="text" placeholder="e.g. PSE20251008">
-                                </td>
-                                <td>
-                                    <label class="header-label">Pool ID</label>
-                                    <input id="pool-id" type="text" value="P_LPO">
                                 </td>
                                 <td>
                                     <label class="header-label">Contact Name</label>
@@ -268,7 +263,9 @@
 
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+        const DEFAULT_POOL_ID = 'P_LPO';
         const postEndpoint = "{{ route('purchase-requisitions.api.post') }}";
+        const catalogEndpoint = "{{ route('modules.procurement.purch-req.api.catalog') }}";
 
         const listToolbar = document.getElementById('list-toolbar');
         const listView = document.getElementById('pr-list-view');
@@ -281,10 +278,20 @@
         const postBtn = document.getElementById('post-btn');
         const prListBody = document.getElementById('pr-list-body');
 
+        let itemCatalog = { categories: [], items: [] };
+        let lineUid = 0;
+
         const showStatus = (message, type = 'success') => {
             statusBox.textContent = message;
             statusBox.className = `status-box ${type}`;
         };
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
 
         const normalizeLineNos = () => {
             Array.from(linesBody.querySelectorAll('tr')).forEach((tr, idx) => {
@@ -293,12 +300,89 @@
             });
         };
 
+        const renderCategoryOptions = () => {
+            const categories = Array.isArray(itemCatalog.categories) ? itemCatalog.categories : [];
+            return categories.map((c) => {
+                const id = String(c.id ?? '').trim();
+                const name = String(c.name ?? id).trim();
+                const label = name && name !== id ? `${id} - ${name}` : id;
+                return `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
+            }).join('');
+        };
+
+        const getItemsByCategory = (categoryId) => {
+            const key = String(categoryId ?? '').trim().toLowerCase();
+            if (!key) {
+                return Array.isArray(itemCatalog.items) ? itemCatalog.items : [];
+            }
+            return (Array.isArray(itemCatalog.items) ? itemCatalog.items : []).filter((item) => {
+                return String(item.category ?? '').trim().toLowerCase() === key;
+            });
+        };
+
+        const getItemById = (itemId) => {
+            const key = String(itemId ?? '').trim().toLowerCase();
+            if (!key) return null;
+            return (Array.isArray(itemCatalog.items) ? itemCatalog.items : []).find((item) => {
+                return String(item.id ?? '').trim().toLowerCase() === key;
+            }) ?? null;
+        };
+
+        const renderItemOptionsForRow = (tr) => {
+            const category = tr.querySelector('.item-category')?.value?.trim() ?? '';
+            const items = getItemsByCategory(category);
+            return items.map((item) => {
+                const id = String(item.id ?? '').trim();
+                const name = String(item.name ?? '').trim();
+                const cat = String(item.category ?? '').trim();
+                const label = name ? `${id} - ${name}` : id;
+                const labelWithCategory = cat ? `${label} (${cat})` : label;
+                return `<option value="${escapeHtml(id)}">${escapeHtml(labelWithCategory)}</option>`;
+            }).join('');
+        };
+
+        const refreshRowDatalists = (tr) => {
+            const catList = tr.querySelector('.item-category-list');
+            const itemList = tr.querySelector('.item-id-list');
+            if (catList) {
+                catList.innerHTML = renderCategoryOptions();
+            }
+            if (itemList) {
+                const prevItem = tr.querySelector('.item-id')?.value ?? '';
+                itemList.innerHTML = renderItemOptionsForRow(tr);
+                const itemInput = tr.querySelector('.item-id');
+                if (itemInput) {
+                    itemInput.value = prevItem;
+                }
+            }
+        };
+
+        const updateCategoryFromItem = (tr) => {
+            const itemId = tr.querySelector('.item-id')?.value?.trim() ?? '';
+            const categoryInput = tr.querySelector('.item-category');
+            if (!categoryInput) return;
+            const selected = getItemById(itemId);
+            if (selected?.category) {
+                categoryInput.value = selected.category;
+                refreshRowDatalists(tr);
+            }
+        };
+
         const addLineRow = () => {
+            lineUid += 1;
+            const uid = lineUid;
             const tr = document.createElement('tr');
+            tr.dataset.lineUid = String(uid);
             tr.innerHTML = `
                 <td><input class="line-input line-no" type="number" min="1" value="${linesBody.querySelectorAll('tr').length + 1}"></td>
-                <td><input class="line-input item-category" type="text" value="Inventory Items"></td>
-                <td><input class="line-input item-id" type="text" placeholder="Enter item id"></td>
+                <td>
+                    <input class="line-input item-category" type="text" list="pr-cat-list-${uid}" placeholder="Type category id / name">
+                    <datalist id="pr-cat-list-${uid}" class="item-category-list"></datalist>
+                </td>
+                <td>
+                    <input class="line-input item-id" type="text" list="pr-item-list-${uid}" placeholder="Type item id to search">
+                    <datalist id="pr-item-list-${uid}" class="item-id-list"></datalist>
+                </td>
                 <td><input class="line-input item-description" type="text" placeholder="Description"></td>
                 <td><input class="line-input required-date" type="date"></td>
                 <td><input class="line-input unit" type="text" value="EA"></td>
@@ -311,6 +395,7 @@
                 <td><button class="btn remove-line-btn" type="button">Remove</button></td>
             `;
             linesBody.appendChild(tr);
+            refreshRowDatalists(tr);
         };
 
         const addAttachmentRow = () => {
@@ -325,6 +410,45 @@
             `;
             attachmentsBody.appendChild(tr);
         };
+
+        async function loadCatalogForCompany() {
+            const company = document.getElementById('company')?.value?.trim() ?? '';
+            itemCatalog = { categories: [], items: [] };
+
+            if (!company) {
+                Array.from(linesBody.querySelectorAll('tr')).forEach((tr) => refreshRowDatalists(tr));
+                return;
+            }
+
+            try {
+                const response = await fetch(catalogEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({ company }),
+                });
+
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok || !payload.status) {
+                    throw new Error(payload.message || payload.error || 'Catalog load failed.');
+                }
+
+                itemCatalog = {
+                    categories: Array.isArray(payload.categories) ? payload.categories : [],
+                    items: Array.isArray(payload.items) ? payload.items : [],
+                };
+
+                Array.from(linesBody.querySelectorAll('tr')).forEach((tr) => refreshRowDatalists(tr));
+            } catch (error) {
+                // Keep the form usable even if catalog fails; user can still type manually.
+                itemCatalog = { categories: [], items: [] };
+                Array.from(linesBody.querySelectorAll('tr')).forEach((tr) => refreshRowDatalists(tr));
+                showStatus(error.message || 'Unable to load item catalog.', 'error');
+            }
+        }
 
         const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -370,12 +494,11 @@
             const prNo = document.getElementById('pr-no').value.trim();
             const prDate = document.getElementById('pr-date').value;
             const warehouse = document.getElementById('warehouse').value.trim();
-            const poolId = document.getElementById('pool-id').value.trim();
             const contactName = document.getElementById('contact-name').value.trim();
             const department = document.getElementById('department').value.trim();
             const remarks = document.getElementById('remarks').value.trim();
 
-            if (!company || !requestId || !prNo || !prDate || !warehouse || !poolId || !contactName || !department) {
+            if (!company || !requestId || !prNo || !prDate || !warehouse || !contactName || !department) {
                 throw new Error('Please fill all required header fields.');
             }
 
@@ -446,7 +569,7 @@
                 pr_no: prNo,
                 pr_date: prDate,
                 warehouse,
-                pool_id: poolId,
+                pool_id: DEFAULT_POOL_ID,
                 contact_name: contactName,
                 remarks,
                 department,
@@ -466,7 +589,6 @@
             document.getElementById('pr-no').value = `REQ-${stamp}`;
             document.getElementById('pr-date').value = new Date().toISOString().slice(0, 10);
             document.getElementById('warehouse').value = '';
-            document.getElementById('pool-id').value = 'P_LPO';
             document.getElementById('contact-name').value = '';
             document.getElementById('department').value = 'Procurement';
             document.getElementById('remarks').value = '';
@@ -476,9 +598,11 @@
             if (firstRequiredDate) {
                 firstRequiredDate.value = document.getElementById('pr-date').value;
             }
+
+            void loadCatalogForCompany();
         };
 
-        const addPrToList = ({ prNo, contactName, department, poolId, prDate, lineCount }) => {
+        const addPrToList = ({ prNo, contactName, department, prDate, lineCount }) => {
             if (prListBody.querySelector('.empty-note')) {
                 prListBody.innerHTML = '';
             }
@@ -489,7 +613,6 @@
                 <td>${prNo || '—'}</td>
                 <td>${contactName || '—'}</td>
                 <td>${department || '—'}</td>
-                <td>${poolId || '—'}</td>
                 <td>${prDate || '—'}</td>
                 <td>${lineCount || 0}</td>
             `;
@@ -559,6 +682,59 @@
             }
         });
 
+        document.getElementById('company')?.addEventListener('change', () => {
+            void loadCatalogForCompany();
+        });
+
+        linesBody.addEventListener('input', (event) => {
+            const tr = event.target.closest('tr');
+            if (!tr) return;
+
+            if (event.target.classList.contains('item-category')) {
+                const itemId = tr.querySelector('.item-id')?.value?.trim() ?? '';
+                const selectedItem = getItemById(itemId);
+                const selectedCategory = tr.querySelector('.item-category')?.value?.trim().toLowerCase() ?? '';
+                const itemCategory = String(selectedItem?.category ?? '').trim().toLowerCase();
+                if (itemId && selectedItem && selectedCategory && itemCategory && selectedCategory !== itemCategory) {
+                    tr.querySelector('.item-id').value = '';
+                }
+                refreshRowDatalists(tr);
+            }
+
+            if (event.target.classList.contains('item-id')) {
+                updateCategoryFromItem(tr);
+            }
+        });
+
+        linesBody.addEventListener('change', (event) => {
+            const tr = event.target.closest('tr');
+            if (!tr) return;
+
+            if (event.target.classList.contains('item-category')) {
+                const itemId = tr.querySelector('.item-id')?.value?.trim() ?? '';
+                const selectedItem = getItemById(itemId);
+                const selectedCategory = tr.querySelector('.item-category')?.value?.trim().toLowerCase() ?? '';
+                const itemCategory = String(selectedItem?.category ?? '').trim().toLowerCase();
+                if (itemId && selectedItem && selectedCategory && itemCategory && selectedCategory !== itemCategory) {
+                    tr.querySelector('.item-id').value = '';
+                }
+                refreshRowDatalists(tr);
+            }
+
+            if (event.target.classList.contains('item-id')) {
+                updateCategoryFromItem(tr);
+            }
+        });
+
+        linesBody.addEventListener('blur', (event) => {
+            if (!event.target.classList.contains('item-id')) return;
+            const tr = event.target.closest('tr');
+            if (!tr) return;
+            updateCategoryFromItem(tr);
+        }, true);
+
+        void loadCatalogForCompany();
+
         postBtn.addEventListener('click', async () => {
             statusBox.className = 'status-box';
             statusBox.textContent = '';
@@ -573,7 +749,6 @@
                     prNo: payload.pr_no,
                     contactName: payload.contact_name,
                     department: payload.department,
-                    poolId: payload.pool_id,
                     prDate: payload.pr_date,
                     lineCount: payload.lines.length,
                 });

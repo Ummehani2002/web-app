@@ -70,47 +70,11 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-head">Create / Update Item</div>
-                    <div class="card-body">
-                        @if(session('status'))
+                    @if(session('status'))
+                        <div class="card-body">
                             <div class="status">{{ session('status') }}</div>
-                        @endif
-                        @if($errors->any())
-                            <div class="error">{{ $errors->first() }}</div>
-                        @endif
-                        <form method="post" action="{{ route('masters.items.store', $companyQuery) }}">
-                            @csrf
-                            <div class="form-row">
-                                <div>
-                                    <label for="item_id">Item ID</label>
-                                    <input id="item_id" name="item_id" value="{{ old('item_id') }}" required maxlength="100">
-                                </div>
-                                <div>
-                                    <label for="item_name">Item Name</label>
-                                    <input id="item_name" name="item_name" value="{{ old('item_name') }}" required maxlength="255">
-                                </div>
-                                <div>
-                                    <label for="type">Type</label>
-                                    <input id="type" name="type" value="{{ old('type') }}" maxlength="50">
-                                </div>
-                                <div>
-                                    <label for="item_category_id">Item Category</label>
-                                    <select id="item_category_id" name="item_category_id">
-                                        <option value="">— Select Category —</option>
-                                        @foreach($categories as $category)
-                                            <option value="{{ $category->name }}" {{ old('item_category_id') === $category->name ? 'selected' : '' }}>
-                                                {{ $category->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <button class="btn" type="submit">Save Item</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="card">
+                        </div>
+                    @endif
                     <table>
                         <thead>
                             <tr>
