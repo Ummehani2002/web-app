@@ -14,6 +14,20 @@ Route::middleware('api.bearer')->group(function () {
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::apiResource('/companies', CompanyController::class);
     Route::apiResource('/projects', ProjectController::class);
+
+    /*
+     * Back-compat aliases: some clients call `/api/pool` (singular).
+     * Canonical routes remain `/api/pools` (apiResource).
+     */
+    Route::match(['get', 'head'], '/pool', [PoolController::class, 'index']);
+    Route::post('/pool', [PoolController::class, 'store']);
+    Route::post('/pool/sync-d365', [PoolController::class, 'syncFromD365'])
+        ->name('api.pool.sync.alias');
+    Route::match(['get', 'head'], '/pool/{pool}', [PoolController::class, 'show']);
+    Route::put('/pool/{pool}', [PoolController::class, 'update']);
+    Route::patch('/pool/{pool}', [PoolController::class, 'update']);
+    Route::delete('/pool/{pool}', [PoolController::class, 'destroy']);
+
     Route::apiResource('/pools', PoolController::class);
     Route::post('/pools/sync-d365', [PoolController::class, 'syncFromD365'])
         ->name('api.pools.sync');
