@@ -36,6 +36,12 @@ Route::middleware('api.bearer')->group(function () {
     Route::get('/sites', [SiteController::class, 'index']);
     Route::post('/sites', [SiteController::class, 'store']);
     Route::delete('/sites/{site}', [SiteController::class, 'destroy']);
+    /*
+     * Singular alias (same resource as /api/sites); mirrors /masters/site naming.
+     */
+    Route::match(['get', 'head'], '/site', [SiteController::class, 'index']);
+    Route::post('/site', [SiteController::class, 'store']);
+    Route::delete('/site/{site}', [SiteController::class, 'destroy']);
     Route::get('/item-categories', [ItemCategorySyncController::class, 'index']);
     Route::post('/item-categories', [ItemCategorySyncController::class, 'store']);
     Route::get('/items', [ItemSyncController::class, 'index']);

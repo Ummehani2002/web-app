@@ -125,6 +125,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');
         Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
         Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
+        // Singular alias (same as UI path /masters/site)
+        Route::get('/site', [SiteController::class, 'index'])->name('site.index');
+        Route::post('/site', [SiteController::class, 'store'])->name('site.store');
+        Route::delete('/site/{site}', [SiteController::class, 'destroy'])->name('site.destroy');
         Route::get('/pools', [ApiPoolController::class, 'index'])->name('pools.index');
         Route::post('/pools', [ApiPoolController::class, 'store'])->name('pools.store');
         Route::delete('/pools/{pool}', [ApiPoolController::class, 'destroy'])->name('pools.destroy');
