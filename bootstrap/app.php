@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'api.bearer' => ApiBearerTokenMiddleware::class,
         ]);
+
+        // Session-authenticated JSON under web; browsers send CSRF from Blade, but
+        // tools like Postman only need the session cookie once logged in.
+        $middleware->validateCsrfTokens(except: [
+            'masters/api/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
