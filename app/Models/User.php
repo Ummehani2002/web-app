@@ -55,7 +55,14 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return (bool) $this->is_super_admin;
+        if ((bool) $this->is_super_admin) {
+            return true;
+        }
+
+        $email = strtolower(trim((string) $this->email));
+        $allowList = config('access.super_admin_emails', []);
+
+        return $email !== '' && in_array($email, $allowList, true);
     }
 
     public function canAccessAdminScreens(): bool
