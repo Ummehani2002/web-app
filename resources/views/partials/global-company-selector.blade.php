@@ -1,4 +1,4 @@
-@if(isset($globalCompanyOptions) && $globalCompanyOptions->count())
+@if(isset($globalCompanyOptions))
 <style>
     :root {
         --app-font: "Segoe UI", "Inter", "Roboto", Arial, sans-serif;
@@ -90,15 +90,19 @@
         right: 14px;
         z-index: 2000;
         width: auto;
-        max-width: calc(100vw - 24px);
+        max-width: min(420px, calc(100vw - 24px));
         background: rgba(255, 255, 255, 0.98);
         border: 1px solid #d2d0ce;
         border-radius: 999px;
-        padding: 4px 8px;
+        padding: 4px 12px;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
         display: inline-flex;
         align-items: center;
         gap: 8px;
+    }
+    .global-company-box.global-company-box--empty {
+        border-radius: 8px;
+        flex-wrap: wrap;
     }
     .global-company-label {
         margin: 0;
@@ -108,6 +112,13 @@
         letter-spacing: 0.3px;
         text-transform: uppercase;
         white-space: nowrap;
+    }
+    .global-company-empty-msg {
+        margin: 0;
+        font-size: 12px;
+        color: #a4262c;
+        line-height: 1.35;
+        max-width: 280px;
     }
     .global-company-select {
         width: 160px;
@@ -123,6 +134,7 @@
 
 </style>
 
+@if($globalCompanyOptions->count())
 <div class="global-company-box">
     <p class="global-company-label">SELECT COMPANY</p>
     <select id="global-company-select" class="global-company-select">
@@ -152,4 +164,14 @@
     });
 })();
 </script>
+@else
+<div class="global-company-box global-company-box--empty">
+    <p class="global-company-label">Company</p>
+    @if($authIsSuperAdmin ?? false)
+        <p class="global-company-empty-msg">No companies in the system yet. Open <strong>Masters → Companies</strong> and create one.</p>
+    @else
+        <p class="global-company-empty-msg">You are not assigned to any company, or none exist yet. Ask an administrator to grant access under Settings → Roles &amp; permissions.</p>
+    @endif
+</div>
+@endif
 @endif
