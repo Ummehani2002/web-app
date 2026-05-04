@@ -3,9 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -21,6 +25,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'microsoft_id',
+        'is_super_admin',
     ];
 
     /**
@@ -43,6 +49,100 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
         ];
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
+    }
+
+    /**
+     * Uppercase D365 company codes the user may work in (all companies if super admin).
+     *
+     * @return Collection<int, string>
+     */
+    public function accessibleCompanyD365Codes(): Collection
+    {
+        if (! Schema::hasTable('company_memberships')) {
+            return collect();
+        }
+
+        if ($this->isSuperAdmin()) {
+            return Company::query()
+                ->whereNotNull('d365_id')
+                ->pluck('d365_id')
+                ->map(fn (mixed $id) => strtoupper((string) $id))
+                ->unique()
+                ->values();
+        }
+
+        /** @var EloquentCollection<int, CompanyMembership> $rows */
+        $rows = $this->companyMemberships()
+            ->whereHas('company', fn ($q) => $q->whereNotNull('d365_id'))
+            ->with('company')
+            ->get();
+
+        return $rows
+            ->pluck('company.d365_id')
+            ->filter()
+            ->map(fn (mixed $id) => strtoupper((string) $id))
+            ->unique()
+            ->values();
+    }
+
+    public function companyMemberships(): HasMany
+    {
+        return $this->hasMany(CompanyMembership::class);
+    }
+
+    public function membershipForCompany(Company $company): ?CompanyMembership
+    {
+        return $this->companyMemberships()
+            ->where('company_id', $company->id)
+            ->first();
+    }
+
+    public function hasPermissionForCompany(Company $company, string $permissionSlug): bool
+    {
+        $membership = $this->membershipForCompany($company);
+        if (! $membership) {
+            return false;
+        }
+
+        return $membership->hasPermission($permissionSlug);
+    }
+
+    public function canManageCompanyUsers(Company $company): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if (! Schema::hasTable('company_memberships')) {
+            return true;
+        }
+
+        $memberships = CompanyMembership::query()
+            ->where('company_id', $company->id)
+            ->with('roles.permissions')
+            ->get();
+
+        if ($memberships->isEmpty()) {
+            return true;
+        }
+
+        if ($this->hasPermissionForCompany($company, 'users.manage')) {
+            return true;
+        }
+
+        $companyHasUserAdmin = $memberships->contains(
+            fn (CompanyMembership $m) => $m->roles->contains(
+                fn (Role $r) => $r->hasPermission('users.manage')
+            )
+        );
+
+        return ! $companyHasUserAdmin;
     }
 }

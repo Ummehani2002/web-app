@@ -9,8 +9,17 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+
         $companies = Company::orderBy('name')
             ->get(['id', 'name', 'd365_id']);
+
+        if ($user && ! $user->isSuperAdmin()) {
+            $allowed = $user->accessibleCompanyD365Codes();
+            $companies = $companies->filter(function (Company $company) use ($allowed) {
+                return $allowed->contains(strtoupper((string) $company->company_id));
+            })->values();
+        }
 
         $defaultCompany = $companies->first(function (Company $company) {
             return strtoupper((string) $company->company_id) === 'PS'

@@ -159,6 +159,9 @@
         </div>
 
         <nav>
+            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard', $companyQuery) }}" style="padding-left:14px; font-weight:600; margin-bottom:8px;">Dashboard</a>
+
+            @if($authIsSuperAdmin ?? false)
             <div class="nav-group">
                 <button type="button" class="nav-group-header" data-nav-target="nav-masters" aria-expanded="true">
                     <span class="nav-icon" aria-hidden="true">
@@ -190,6 +193,7 @@
                     <a class="nav-link {{ request()->routeIs('masters.department-managers.index') ? 'active' : '' }}" href="{{ route('masters.department-managers.index', $companyQuery) }}">Department Managers</a>
                 </div>
             </div>
+            @endif
 
             <div class="nav-group">
                 <button type="button" class="nav-group-header" data-nav-target="nav-modules" aria-expanded="true">
@@ -208,7 +212,9 @@
                             <span class="chevron-sm" aria-hidden="true">▲</span>
                         </button>
                         <div class="nav-subgroup-body" id="nav-pm">
+                            @if(($authIsSuperAdmin ?? false) || ($canItemIssue ?? false))
                             <a class="nav-link nested {{ request()->routeIs('modules.project-management.item-issue') ? 'active' : '' }}" href="{{ route('modules.project-management.item-issue', $companyQuery) }}">Item Issue</a>
+                            @endif
                         </div>
                     </div>
                     <div class="nav-subgroup">
@@ -217,19 +223,30 @@
                             <span class="chevron-sm" aria-hidden="true">▲</span>
                         </button>
                         <div class="nav-subgroup-body" id="nav-procurement">
+                            @if(($authIsSuperAdmin ?? false) || ($canModulesGeneral ?? false))
                             <a class="nav-link nested {{ request()->routeIs('quotations.*') ? 'active' : '' }}" href="{{ route('quotations.index', $companyQuery) }}">Quotation</a>
+                            @endif
+                            @if(($authIsSuperAdmin ?? false) || ($canPr ?? false))
                             <a class="nav-link nested {{ request()->routeIs('modules.procurement.purch-req*') ? 'active' : '' }}" href="{{ route('modules.procurement.purch-req', $companyQuery) }}">Purchase Requisition</a>
+                            @endif
+                            @if(($authIsSuperAdmin ?? false) || ($canModulesGeneral ?? false))
                             <a class="nav-link nested {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}" href="{{ route('purchase-orders.index', $companyQuery) }}">Purchase Order</a>
+                            @endif
+                            @if(($authIsSuperAdmin ?? false) || ($canGrn ?? false))
                             <a class="nav-link nested {{ request()->routeIs('modules.procurement.grn*') ? 'active' : '' }}" href="{{ route('modules.procurement.grn', $companyQuery) }}">Goods Receive Note</a>
+                            @endif
+                            @if(($authIsSuperAdmin ?? false) || ($canModulesGeneral ?? false))
                             <a class="nav-link nested {{ request()->routeIs('inventory.*') ? 'active' : '' }}" href="{{ route('inventory.index', $companyQuery) }}">Inventory</a>
                             <a class="nav-link nested {{ request()->routeIs('vendors.*') ? 'active' : '' }}" href="{{ route('vendors.index', $companyQuery) }}">Vendors</a>
                             <a class="nav-link nested {{ request()->routeIs('customers.*') ? 'active' : '' }}" href="{{ route('customers.index', $companyQuery) }}">Customers</a>
                             <a class="nav-link nested {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index', $companyQuery) }}">Reports</a>
+                            @endif
                         </div>
                     </div>
                 </div>
             </div>
 
+            @if($authIsSuperAdmin ?? false)
             <div class="nav-group">
                 <button type="button" class="nav-group-header" data-nav-target="nav-settings" aria-expanded="true">
                     <span class="nav-icon" aria-hidden="true">
@@ -245,6 +262,7 @@
                     <a class="nav-link {{ request()->routeIs('settings.roles-permissions') ? 'active' : '' }}" href="{{ route('settings.roles-permissions', $companyQuery) }}">Roles & Permissions</a>
                 </div>
             </div>
+            @endif
         </nav>
 
         <div class="logout-row">
@@ -259,6 +277,12 @@
         <div class="main-header">
             <h2>Dashboard</h2>
         </div>
+
+        @if (session('warning'))
+            <div style="max-width:520px;padding:10px 14px;margin-bottom:16px;background:#fff4ce;border:1px solid #e0d0a0;border-radius:2px;font-size:13px;color:#8a6d3b;">
+                {{ session('warning') }}
+            </div>
+        @endif
 
         <div class="info-card">
             <h3>User Details</h3>

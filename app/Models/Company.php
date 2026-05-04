@@ -58,4 +58,14 @@ class Company extends Model
     {
         return $this->hasMany(Project::class);
     }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(CompanyMembership::class);
+    }
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
 }

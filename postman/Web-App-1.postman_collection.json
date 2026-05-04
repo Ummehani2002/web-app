@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "d265-web-app-1",
 		"name": "WEB APP 1",
-		"description": "API calls for this Laravel app. Set collection variables: base_url, api_bearer_token (same as WEBAPP_API_BEARER_TOKEN on the server). Companies come first — create companies before projects that reference company_id.",
+		"description": "API calls for this Laravel app. Set collection variables: base_url, api_bearer_token (must match WEBAPP_API_BEARER_TOKEN in .env — if unset, add e.g. WEBAPP_API_BEARER_TOKEN=your-secret). Companies come first — create companies before projects that reference company_id. Masters: Sales tax groups and Item sales tax groups use POST JSON bodies as in the examples.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -181,6 +181,82 @@
 							"raw": "{}"
 						},
 						"url": "{{base_url}}/api/customers"
+					}
+				}
+			]
+		},
+		{
+			"name": "Masters — Sales tax groups",
+			"item": [
+				{
+					"name": "List sales tax groups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/sales-tax-groups"
+					}
+				},
+				{
+					"name": "Create sales tax group",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tax_group_id\": \"STG-TEST-01\",\n  \"tax_group_name\": \"Standard VAT test\"\n}"
+						},
+						"url": "{{base_url}}/api/sales-tax-groups"
+					}
+				},
+				{
+					"name": "Delete sales tax group",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{base_url}}/api/sales-tax-groups/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "Masters — Item sales tax groups",
+			"item": [
+				{
+					"name": "List item sales tax groups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/item-sales-tax-groups"
+					}
+				},
+				{
+					"name": "Create item sales tax group",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tax_item_group\": \"ISTG-TEST-01\",\n  \"tax_group_name\": \"Items — reduced rate\"\n}"
+						},
+						"url": "{{base_url}}/api/item-sales-tax-groups"
+					}
+				},
+				{
+					"name": "Delete item sales tax group",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{base_url}}/api/item-sales-tax-groups/1"
 					}
 				}
 			]

@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\ItemCategorySyncController;
+use App\Http\Controllers\Api\ItemSalesTaxGroupController;
 use App\Http\Controllers\Api\ItemSyncController;
 use App\Http\Controllers\Api\PoolController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\SalesTaxGroupController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\ItemIssueController;
@@ -42,6 +44,20 @@ Route::middleware('api.bearer')->group(function () {
     Route::match(['get', 'head'], '/site', [SiteController::class, 'index']);
     Route::post('/site', [SiteController::class, 'store']);
     Route::delete('/site/{site}', [SiteController::class, 'destroy']);
+    Route::get('/sales-tax-groups', [SalesTaxGroupController::class, 'index'])
+        ->name('api.sales-tax-groups.index');
+    Route::post('/sales-tax-groups', [SalesTaxGroupController::class, 'store'])
+        ->name('api.sales-tax-groups.store');
+    Route::delete('/sales-tax-groups/{sales_tax_group}', [SalesTaxGroupController::class, 'destroy'])
+        ->name('api.sales-tax-groups.destroy');
+
+    Route::get('/item-sales-tax-groups', [ItemSalesTaxGroupController::class, 'index'])
+        ->name('api.item-sales-tax-groups.index');
+    Route::post('/item-sales-tax-groups', [ItemSalesTaxGroupController::class, 'store'])
+        ->name('api.item-sales-tax-groups.store');
+    Route::delete('/item-sales-tax-groups/{item_sales_tax_group}', [ItemSalesTaxGroupController::class, 'destroy'])
+        ->name('api.item-sales-tax-groups.destroy');
+
     Route::get('/item-categories', [ItemCategorySyncController::class, 'index']);
     Route::post('/item-categories', [ItemCategorySyncController::class, 'store']);
     Route::get('/items', [ItemSyncController::class, 'index']);

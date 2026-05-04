@@ -49,7 +49,9 @@
         <div class="logo">Logo</div>
         <div class="label">Menu</div>
         <a class="menu-link" href="{{ route('dashboard', $companyQuery) }}">Dashboard</a>
+        @if($authIsSuperAdmin ?? false)
         <a class="menu-link" href="{{ route('masters.company.index', $companyQuery) }}">Masters</a>
+        @endif
         <a class="menu-link" href="#">Modules</a>
         <div class="sub">
             <a class="menu-link" href="#">Project Management</a>
@@ -60,7 +62,9 @@
                 <a class="menu-link active" href="{{ route('modules.procurement.grn', $companyQuery) }}">Goods Receive Note</a>
             </div>
         </div>
+        @if($authIsSuperAdmin ?? false)
         <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}" style="display:flex;align-items:center;gap:6px;margin-top:8px;">Settings</a>
+        @endif
     </aside>
 
     <main class="main">

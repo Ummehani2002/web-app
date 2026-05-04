@@ -99,18 +99,26 @@
 </head>
 <body>
     @include('partials.global-company-selector')
+    @php
+        $companyCodeNav = strtoupper((string) request()->query('company', ''));
+        $companyQuery = $companyCodeNav !== '' ? ['company' => $companyCodeNav] : [];
+    @endphp
     <aside class="sidebar">
         <div class="logo">Logo</div>
         <div class="label">Menu</div>
-        <a class="menu-link" href="{{ route('dashboard') }}">Dashboard</a>
-        <a class="menu-link" href="{{ route('masters.company.index') }}">Masters</a>
+        <a class="menu-link" href="{{ route('dashboard', $companyQuery) }}">Dashboard</a>
+        @if($authIsSuperAdmin ?? false)
+        <a class="menu-link" href="{{ route('masters.company.index', $companyQuery) }}">Masters</a>
+        @endif
         <a class="menu-link active" href="#">Modules</a>
         <div class="sub">
             <a class="menu-link" href="#">Project Management</a>
             <a class="menu-link active" href="#">Procurement</a>
-            <a class="menu-link active" href="{{ route('purchase-requisitions.index') }}">Purchase Requisition</a>
+            <a class="menu-link active" href="{{ route('purchase-requisitions.index', $companyQuery) }}">Purchase Requisition</a>
         </div>
-        <a class="menu-link" href="{{ route('settings.index') }}">Settings</a>
+        @if($authIsSuperAdmin ?? false)
+        <a class="menu-link" href="{{ route('settings.index', $companyQuery) }}">Settings</a>
+        @endif
     </aside>
 
     <main class="main">
