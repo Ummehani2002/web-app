@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\SizeController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\PoolController as ApiPoolController;
 use App\Http\Controllers\Api\CurrencyController as ApiCurrencyController;
+use App\Http\Controllers\Api\ItemSalesTaxGroupController as ApiItemSalesTaxGroupController;
+use App\Http\Controllers\ItemSalesTaxGroupMasterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +97,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('masters.items.index');
     Route::post('/masters/items', [ItemMasterController::class, 'store'])
         ->name('masters.items.store');
+    Route::get('/masters/item-sales-tax-groups', [ItemSalesTaxGroupMasterController::class, 'index'])
+        ->name('masters.item-sales-tax-groups.index');
 
     $masterStubs = [
         'colors' => 'Colors',
@@ -103,7 +107,6 @@ Route::middleware(['auth'])->group(function () {
         'units' => 'Units',
         'batches' => 'Batches',
         'sales-tax-groups' => 'Sales Tax Groups',
-        'item-sales-tax-groups' => 'Item Sales Tax Groups',
         'department-managers' => 'Department Managers',
     ];
     foreach ($masterStubs as $slug => $title) {
@@ -135,6 +138,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/currencies', [ApiCurrencyController::class, 'index'])->name('currencies.index');
         Route::post('/currencies', [ApiCurrencyController::class, 'store'])->name('currencies.store');
         Route::delete('/currencies/{currency}', [ApiCurrencyController::class, 'destroy'])->name('currencies.destroy');
+        Route::get('/item-sales-tax-groups', [ApiItemSalesTaxGroupController::class, 'index'])->name('item-sales-tax-groups.index');
+        Route::post('/item-sales-tax-groups', [ApiItemSalesTaxGroupController::class, 'store'])->name('item-sales-tax-groups.store');
+        Route::delete('/item-sales-tax-groups/{item_sales_tax_group}', [ApiItemSalesTaxGroupController::class, 'destroy'])->name('item-sales-tax-groups.destroy');
     });
 
     Route::get('/modules/project-management/item-issue', [ItemIssueController::class, 'index'])
