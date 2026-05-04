@@ -67,7 +67,7 @@
     @endphp
     <div class="header">
         <h1>Unit Master</h1>
-        <p class="hint">Units are stored per row in <strong>Item master</strong> (<code>item_id</code>). Use the item’s numeric id from Items, or the same D365 item code.</p>
+       
     </div>
 
     <div class="card">
