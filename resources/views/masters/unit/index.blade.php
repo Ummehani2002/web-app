@@ -126,7 +126,12 @@
 
     <script>
         const tbody = document.querySelector('tbody');
-        const apiUrl = "{{ url('/masters/api/item-units') }}";
+        const companyCode = "{{ strtoupper((string) ($currentCompanyCode ?? request()->query('company', ''))) }}";
+        const apiBaseUrl = "{{ url('/masters/api/item-units') }}";
+        const apiUrl = new URL(apiBaseUrl);
+        if (companyCode) {
+            apiUrl.searchParams.set('company', companyCode);
+        }
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
         const defaultHeaders = {
@@ -191,7 +196,13 @@
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: defaultHeaders,
-                    body: JSON.stringify({ item_id, unit_id, unit_name, definition: definition || null }),
+                    body: JSON.stringify({
+                        company_id: companyCode,
+                        item_id,
+                        unit_id,
+                        unit_name,
+                        definition: definition || null
+                    }),
                 });
                 const payload = await response.json().catch(() => ({}));
                 if (!response.ok || payload.status === false) {
@@ -214,7 +225,7 @@
             const id = event.target.getAttribute('data-id');
             if (!window.confirm('Delete this record?')) return;
             try {
-                const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE', headers: defaultHeaders });
+                const response = await fetch(`${apiBaseUrl}/${id}`, { method: 'DELETE', headers: defaultHeaders });
                 if (!response.ok) throw new Error('Delete failed');
                 await loadRows();
             } catch {

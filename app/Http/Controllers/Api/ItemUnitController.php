@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Item;
 use App\Models\ItemUnit;
 use Illuminate\Http\JsonResponse;
@@ -11,17 +12,33 @@ use Illuminate\Validation\ValidationException;
 
 class ItemUnitController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $company = Company::resolveFromMixed($request->query('company', $request->query('company_id')));
+
         return response()->json([
             'status' => true,
             'message' => 'Item units fetched successfully.',
-            'data' => ItemUnit::query()->with('item')->latest()->get(),
+            'data' => ItemUnit::query()
+                ->when($company, fn ($q) => $q->where('company_id', $company->id))
+                ->with(['item', 'company:id,d365_id,name'])
+                ->latest()
+                ->get(),
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
+        $company = Company::resolveFromMixed(
+            $request->input('company_id', $request->query('company', $request->query('company_id')))
+        );
+        if (! $company) {
+            return response()->json([
+                'status' => false,
+                'message' => 'company_id is required and must exist.',
+            ], 422);
+        }
+
         $input = $request->all();
         if (array_key_exists('defination', $input) && ! array_key_exists('definition', $input)) {
             $request->merge(['definition' => $input['defination']]);
@@ -45,6 +62,7 @@ class ItemUnitController extends Controller
         if ($itemPk === 0) {
             $code = strtoupper(trim((string) $validated['item_d365_id']));
             $item = Item::query()
+                ->where('company_id', $company->id)
                 ->where(function ($q) use ($code) {
                     $q->whereRaw('UPPER(TRIM(d365_id)) = ?', [$code])
                         ->orWhereRaw('UPPER(TRIM(d365_item_id)) = ?', [$code]);
@@ -58,10 +76,18 @@ class ItemUnitController extends Controller
             $itemPk = (int) $item->id;
         }
 
+        $itemCompanyId = (int) Item::query()->whereKey($itemPk)->value('company_id');
+        if ($itemCompanyId !== (int) $company->id) {
+            throw ValidationException::withMessages([
+                'item_id' => ['Selected item does not belong to the selected company.'],
+            ]);
+        }
+
         $unitId = strtoupper(trim($validated['unit_id']));
 
         $row = ItemUnit::updateOrCreate(
             [
+                'company_id' => $company->id,
                 'item_id' => $itemPk,
                 'unit_id' => $unitId,
             ],

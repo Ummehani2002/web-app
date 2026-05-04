@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "d265-web-app-1",
 		"name": "WEB APP 1",
-		"description": "API calls for this Laravel app. Set collection variables: base_url, api_bearer_token (must match WEBAPP_API_BEARER_TOKEN in .env — if unset, add e.g. WEBAPP_API_BEARER_TOKEN=your-secret). Companies come first — create companies before projects that reference company_id. Masters: Sales tax groups and Item sales tax groups use POST JSON bodies as in the examples.",
+		"description": "API calls for this Laravel app. Set collection variables: base_url, api_bearer_token (must match WEBAPP_API_BEARER_TOKEN in .env — if unset, add e.g. WEBAPP_API_BEARER_TOKEN=your-secret). Companies come first — create companies before projects that reference company_id. Masters (sales tax group, item sales tax group, item units) are company-specific: send company_id in POST body and use ?company_id= in list requests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -193,7 +193,18 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": "{{base_url}}/api/sales-tax-groups"
+						"url": {
+							"raw": "{{base_url}}/api/sales-tax-groups?company_id=C001",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sales-tax-groups"],
+							"query": [
+								{
+									"key": "company_id",
+									"value": "C001",
+									"description": "Required for company-scoped list. Numeric company id or companies.d365_id."
+								}
+							]
+						}
 					}
 				},
 				{
@@ -208,7 +219,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"tax_group_id\": \"STG-TEST-01\",\n  \"tax_group_name\": \"Standard VAT test\"\n}"
+							"raw": "{\n  \"company_id\": \"C001\",\n  \"tax_group_id\": \"STG-TEST-01\",\n  \"tax_group_name\": \"Standard VAT test\"\n}"
 						},
 						"url": "{{base_url}}/api/sales-tax-groups"
 					}
@@ -231,7 +242,18 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": "{{base_url}}/api/item-sales-tax-groups"
+						"url": {
+							"raw": "{{base_url}}/api/item-sales-tax-groups?company_id=C001",
+							"host": ["{{base_url}}"],
+							"path": ["api", "item-sales-tax-groups"],
+							"query": [
+								{
+									"key": "company_id",
+									"value": "C001",
+									"description": "Required for company-scoped list. Numeric company id or companies.d365_id."
+								}
+							]
+						}
 					}
 				},
 				{
@@ -246,7 +268,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"tax_item_group\": \"ISTG-TEST-01\",\n  \"tax_group_name\": \"Items — reduced rate\"\n}"
+							"raw": "{\n  \"company_id\": \"C001\",\n  \"tax_item_group\": \"ISTG-TEST-01\",\n  \"tax_group_name\": \"Items — reduced rate\"\n}"
 						},
 						"url": "{{base_url}}/api/item-sales-tax-groups"
 					}
@@ -269,7 +291,18 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": "{{base_url}}/api/item-units"
+						"url": {
+							"raw": "{{base_url}}/api/item-units?company_id=C001",
+							"host": ["{{base_url}}"],
+							"path": ["api", "item-units"],
+							"query": [
+								{
+									"key": "company_id",
+									"value": "C001",
+									"description": "Required for company-scoped list. Numeric company id or companies.d365_id."
+								}
+							]
+						}
 					}
 				},
 				{
@@ -284,7 +317,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"item_id\": 1,\n  \"unit_id\": \"EA\",\n  \"unit_name\": \"Each\",\n  \"definition\": \"Basic unit\"\n}"
+							"raw": "{\n  \"company_id\": \"C001\",\n  \"item_id\": 1,\n  \"unit_id\": \"EA\",\n  \"unit_name\": \"Each\",\n  \"definition\": \"Basic unit\"\n}"
 						},
 						"url": "{{base_url}}/api/item-units"
 					}
@@ -301,7 +334,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"item_d365_id\": \"ITEM001\",\n  \"unit_id\": \"EA\",\n  \"unit_name\": \"Each\",\n  \"defination\": \"Basic unit\"\n}"
+							"raw": "{\n  \"company_id\": \"C001\",\n  \"item_d365_id\": \"ITEM001\",\n  \"unit_id\": \"EA\",\n  \"unit_name\": \"Each\",\n  \"defination\": \"Basic unit\"\n}"
 						},
 						"url": "{{base_url}}/api/item-units"
 					}

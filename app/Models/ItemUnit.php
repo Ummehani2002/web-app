@@ -11,6 +11,7 @@ class ItemUnit extends Model
     use HasFactory;
 
     protected $fillable = [
+        'company_id',
         'item_id',
         'unit_id',
         'unit_name',
@@ -21,5 +22,10 @@ class ItemUnit extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }

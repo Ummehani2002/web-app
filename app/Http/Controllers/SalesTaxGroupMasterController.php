@@ -2,10 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
+use Illuminate\Http\Request;
+
 class SalesTaxGroupMasterController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('masters.sales_tax_group.index');
+        $currentCompanyCode = strtoupper(trim((string) $request->query('company', '')));
+        $selectedCompany = Company::resolveFromMixed($currentCompanyCode);
+
+        return view('masters.sales_tax_group.index', [
+            'currentCompanyCode' => strtoupper((string) ($selectedCompany?->company_id ?? $currentCompanyCode)),
+        ]);
     }
 }

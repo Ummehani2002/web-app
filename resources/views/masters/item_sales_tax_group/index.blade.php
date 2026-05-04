@@ -96,6 +96,10 @@
 </head>
 <body>
     @include('partials.global-company-selector')
+    @php
+        $companyCode = strtoupper((string) ($currentCompanyCode ?? request()->query('company', '')));
+        $companyQuery = $companyCode !== '' ? ['company' => $companyCode] : [];
+    @endphp
     <div class="header">
         <h1>Item Sales Tax Group Master</h1>
     </div>
@@ -137,12 +141,17 @@
                 </tr>
             </tbody>
         </table>
-        <a class="back-link" href="{{ route('dashboard') }}">Back to Dashboard</a>
+        <a class="back-link" href="{{ route('dashboard', $companyQuery) }}">Back to Dashboard</a>
     </div>
 
     <script>
         const tbody = document.querySelector('tbody');
-        const apiUrl = "{{ url('/masters/api/item-sales-tax-groups') }}";
+        const companyCode = "{{ $companyCode }}";
+        const apiBaseUrl = "{{ url('/masters/api/item-sales-tax-groups') }}";
+        const apiUrl = new URL(apiBaseUrl);
+        if (companyCode) {
+            apiUrl.searchParams.set('company', companyCode);
+        }
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
         const defaultHeaders = {
@@ -209,6 +218,7 @@
                     method: 'POST',
                     headers: defaultHeaders,
                     body: JSON.stringify({
+                        company_id: companyCode,
                         tax_item_group,
                         tax_group_name,
                     }),
@@ -236,7 +246,7 @@
             if (!window.confirm('Delete this record?')) return;
 
             try {
-                const response = await fetch(`${apiUrl}/${id}`, {
+                const response = await fetch(`${apiBaseUrl}/${id}`, {
                     method: 'DELETE',
                     headers: defaultHeaders,
                 });
