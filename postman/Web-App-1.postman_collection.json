@@ -260,6 +260,61 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Masters — Item units",
+			"item": [
+				{
+					"name": "List item units",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/item-units"
+					}
+				},
+				{
+					"name": "Create item unit (by item master id)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"item_id\": 1,\n  \"unit_id\": \"EA\",\n  \"unit_name\": \"Each\",\n  \"definition\": \"Basic unit\"\n}"
+						},
+						"url": "{{base_url}}/api/item-units"
+					}
+				},
+				{
+					"name": "Create item unit (by item_d365_id code)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"item_d365_id\": \"ITEM001\",\n  \"unit_id\": \"EA\",\n  \"unit_name\": \"Each\",\n  \"defination\": \"Basic unit\"\n}"
+						},
+						"url": "{{base_url}}/api/item-units"
+					}
+				},
+				{
+					"name": "Delete item unit",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{base_url}}/api/item-units/1"
+					}
+				}
+			]
 		}
 	]
 }

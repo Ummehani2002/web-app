@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CurrencyController as ApiCurrencyController;
 use App\Http\Controllers\Api\ItemSalesTaxGroupController as ApiItemSalesTaxGroupController;
+use App\Http\Controllers\Api\ItemUnitController as ApiItemUnitController;
 use App\Http\Controllers\Api\PoolController as ApiPoolController;
 use App\Http\Controllers\Api\SalesTaxGroupController as ApiSalesTaxGroupController;
 use App\Http\Controllers\Api\SiteController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\ItemCategoryMasterController;
 use App\Http\Controllers\ItemIssueController;
 use App\Http\Controllers\ItemMasterController;
 use App\Http\Controllers\ItemSalesTaxGroupMasterController;
+use App\Http\Controllers\ItemUnitMasterController;
 use App\Http\Controllers\PoolMasterController;
 use App\Http\Controllers\ProjectMasterController;
 use App\Http\Controllers\PurchaseRequisitionController;
@@ -105,12 +107,13 @@ Route::middleware(['auth', 'company.access'])->group(function () {
             ->name('masters.item-sales-tax-groups.index');
         Route::get('/masters/sales-tax-groups', [SalesTaxGroupMasterController::class, 'index'])
             ->name('masters.sales-tax-groups.index');
+        Route::get('/masters/units', [ItemUnitMasterController::class, 'index'])
+            ->name('masters.units.index');
 
         $masterStubs = [
             'colors' => 'Colors',
             'styles' => 'Styles',
             'locations' => 'Locations',
-            'units' => 'Units',
             'batches' => 'Batches',
             'department-managers' => 'Department Managers',
         ];
@@ -149,6 +152,9 @@ Route::middleware(['auth', 'company.access'])->group(function () {
             Route::get('/sales-tax-groups', [ApiSalesTaxGroupController::class, 'index'])->name('sales-tax-groups.index');
             Route::post('/sales-tax-groups', [ApiSalesTaxGroupController::class, 'store'])->name('sales-tax-groups.store');
             Route::delete('/sales-tax-groups/{sales_tax_group}', [ApiSalesTaxGroupController::class, 'destroy'])->name('sales-tax-groups.destroy');
+            Route::get('/item-units', [ApiItemUnitController::class, 'index'])->name('item-units.index');
+            Route::post('/item-units', [ApiItemUnitController::class, 'store'])->name('item-units.store');
+            Route::delete('/item-units/{item_unit}', [ApiItemUnitController::class, 'destroy'])->name('item-units.destroy');
         });
 
         // Settings

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\ItemCategorySyncController;
 use App\Http\Controllers\Api\ItemSalesTaxGroupController;
+use App\Http\Controllers\Api\ItemUnitController;
 use App\Http\Controllers\Api\ItemSyncController;
 use App\Http\Controllers\Api\PoolController;
 use App\Http\Controllers\Api\ProjectController;
@@ -57,6 +58,10 @@ Route::middleware('api.bearer')->group(function () {
         ->name('api.item-sales-tax-groups.store');
     Route::delete('/item-sales-tax-groups/{item_sales_tax_group}', [ItemSalesTaxGroupController::class, 'destroy'])
         ->name('api.item-sales-tax-groups.destroy');
+
+    Route::get('/item-units', [ItemUnitController::class, 'index'])->name('api.item-units.index');
+    Route::post('/item-units', [ItemUnitController::class, 'store'])->name('api.item-units.store');
+    Route::delete('/item-units/{item_unit}', [ItemUnitController::class, 'destroy'])->name('api.item-units.destroy');
 
     Route::get('/item-categories', [ItemCategorySyncController::class, 'index']);
     Route::post('/item-categories', [ItemCategorySyncController::class, 'store']);
