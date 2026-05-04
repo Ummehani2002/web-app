@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Middleware\ApiBearerTokenMiddleware;
-use App\Http\Middleware\EnsureCompanyPermission;
-use App\Http\Middleware\EnsureSuperAdmin;
-use App\Http\Middleware\EnsureUserCompanyAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,9 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'api.bearer' => ApiBearerTokenMiddleware::class,
-            'company.access' => EnsureUserCompanyAccess::class,
-            'company.perm' => EnsureCompanyPermission::class,
-            'super.admin' => EnsureSuperAdmin::class,
         ]);
 
         // Session-authenticated JSON under web; browsers send CSRF from Blade, but

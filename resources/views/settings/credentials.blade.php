@@ -122,7 +122,6 @@
         <div class="nav-sub">
             <a class="nav-link" href="{{ route('settings.token') }}">API Token Timer</a>
             <a class="nav-link active" href="{{ route('settings.credentials') }}">D365 Credentials</a>
-            <a class="nav-link" href="{{ route('settings.roles-permissions') }}">Roles & Permissions</a>
         </div>
     </nav>
     <div class="sidebar-footer">

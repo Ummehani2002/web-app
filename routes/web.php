@@ -63,15 +63,13 @@ Route::post('/logout', [MicrosoftOAuthController::class, 'logout'])
 // ===========================================
 // PROTECTED ROUTES (Require Authentication)
 // ===========================================
-Route::middleware(['auth', 'company.access'])->group(function () {
+Route::middleware(['auth'])->group(function () {
 
     // Dashboard (Main protected route)
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    // Masters, master APIs, and Settings: super administrators only
-    Route::middleware(['super.admin'])->group(function () {
-        // Company Master (first master setup)
+    // Company Master (first master setup)
         Route::get('/masters/company', [CompanyMasterController::class, 'index'])
             ->name('masters.company.index');
         Route::post('/masters/company', [CompanyMasterController::class, 'store'])
@@ -163,15 +161,8 @@ Route::middleware(['auth', 'company.access'])->group(function () {
         Route::post('/settings/token/generate', [SettingsController::class, 'generateToken'])->name('settings.token.generate');
         Route::get('/settings/credentials', [SettingsController::class, 'credsIndex'])->name('settings.credentials');
         Route::post('/settings/credentials', [SettingsController::class, 'saveCredentials'])->name('settings.credentials.save');
-        Route::get('/settings/roles-permissions', [SettingsController::class, 'rolesPermissionsIndex'])->name('settings.roles-permissions');
-        Route::post('/settings/roles-permissions/user-account', [SettingsController::class, 'storeUserAccount'])->name('settings.roles-permissions.user-account.store');
-        Route::post('/settings/roles-permissions/assign', [SettingsController::class, 'assignCompanyRole'])->name('settings.roles-permissions.assign');
-        Route::patch('/settings/roles-permissions/members/{membership}', [SettingsController::class, 'updateCompanyMember'])->name('settings.roles-permissions.members.update');
 
-    }); // end super.admin
-
-    Route::middleware(['company.perm:item_issue.access'])->group(function () {
-        Route::get('/modules/project-management/item-issue', [ItemIssueController::class, 'index'])
+    Route::get('/modules/project-management/item-issue', [ItemIssueController::class, 'index'])
             ->name('modules.project-management.item-issue');
         Route::post('/modules/project-management/item-issue/api/items/lookup', [ItemIssueController::class, 'lookupItems'])
             ->name('modules.project-management.item-issue.api.items.lookup');
@@ -187,7 +178,6 @@ Route::middleware(['auth', 'company.access'])->group(function () {
             ->name('modules.project-management.item-issue.api.journals.show');
         Route::delete('/modules/project-management/item-issue/api/journals/{journal}', [ItemIssueController::class, 'destroyJournal'])
             ->name('modules.project-management.item-issue.api.journals.destroy');
-    });
 
     // Laravel expects /home after login, so redirect it to dashboard
     Route::get('/home', function () {
@@ -199,7 +189,6 @@ Route::middleware(['auth', 'company.access'])->group(function () {
     // ===========================================
 
     // Purchase Requisition Module
-    Route::middleware(['company.perm:pr.access'])->group(function () {
         Route::get('/purchase-requisitions', [PurchaseRequisitionController::class, 'index'])
             ->name('purchase-requisitions.index');
         Route::post('/purchase-requisitions/api/post', [PurchaseRequisitionController::class, 'post'])
@@ -226,10 +215,8 @@ Route::middleware(['auth', 'company.access'])->group(function () {
         Route::get('/modules/procurement/purch-req/{journal}/attachments/{index}/base64', [PurchReqController::class, 'viewBase64'])
             ->name('modules.procurement.purch-req.attachment.base64')
             ->where('index', '[0-9]+');
-    });
 
     // Goods Receive Note (GRN) Module
-    Route::middleware(['company.perm:grn.access'])->group(function () {
         Route::get('/modules/procurement/grn', [GrnController::class, 'index'])
             ->name('modules.procurement.grn');
         Route::get('/modules/procurement/grn/view', [GrnController::class, 'view'])
@@ -240,10 +227,8 @@ Route::middleware(['auth', 'company.access'])->group(function () {
             ->name('modules.procurement.grn.api.lines');
         Route::post('/modules/procurement/grn/api/post', [GrnController::class, 'postPackingSlip'])
             ->name('modules.procurement.grn.api.post');
-    });
 
-    // Other module stubs (quotation, PO, inventory, …) — requires broad modules access
-    Route::middleware(['company.perm:modules.access'])->group(function () {
+    // Other module stubs (quotation, PO, inventory, …)
         Route::get('/quotations', function () {
             return 'Quotation Module - Coming Soon';
         })->name('quotations.index');
@@ -267,7 +252,6 @@ Route::middleware(['auth', 'company.access'])->group(function () {
         Route::get('/reports', function () {
             return 'Reports Module - Coming Soon';
         })->name('reports.index');
-    });
 });
 
 // ===========================================

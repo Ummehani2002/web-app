@@ -59,16 +59,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Masters, Settings, and related routes. When company access enforcement is off,
-     * any authenticated user may use these screens (see config/company.php).
+     * Masters, Settings, and related routes (no role gating — any signed-in user).
      */
     public function canAccessAdminScreens(): bool
     {
-        if (! config('company.enforce_access', false)) {
-            return true;
-        }
-
-        return $this->isSuperAdmin();
+        return true;
     }
 
     /**
