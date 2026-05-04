@@ -161,7 +161,7 @@
         <nav>
             <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard', $companyQuery) }}" style="padding-left:14px; font-weight:600; margin-bottom:8px;">Dashboard</a>
 
-            @if($authIsSuperAdmin ?? false)
+            @if($authShowMastersSettingsNav ?? false)
             <div class="nav-group">
                 <button type="button" class="nav-group-header" data-nav-target="nav-masters" aria-expanded="true">
                     <span class="nav-icon" aria-hidden="true">
@@ -246,7 +246,7 @@
                 </div>
             </div>
 
-            @if($authIsSuperAdmin ?? false)
+            @if($authShowMastersSettingsNav ?? false)
             <div class="nav-group">
                 <button type="button" class="nav-group-header" data-nav-target="nav-settings" aria-expanded="true">
                     <span class="nav-icon" aria-hidden="true">

@@ -9,8 +9,9 @@ return [
     |
     | When false, logged-in users are not redirected for missing company
     | assignment, module routes are not gated by role, and the sidebar shows
-    | all module links. Masters / Settings still require super admin.
-    | Set ENFORCE_COMPANY_ACCESS=true to restore the previous behaviour.
+    | all module links. Masters and Settings are available to any signed-in user.
+    | Set ENFORCE_COMPANY_ACCESS=true to restore super-admin-only admin screens
+    | and role-based module access.
     |
     */
 

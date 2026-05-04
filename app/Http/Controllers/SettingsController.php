@@ -100,7 +100,7 @@ class SettingsController extends Controller
             ->get();
 
         $user = $request->user();
-        $canManage = $user && ($user->isSuperAdmin() || $user->canManageCompanyUsers($company));
+        $canManage = $user && ($user->canAccessAdminScreens() || $user->canManageCompanyUsers($company));
 
         $allUsers = User::query()
             ->orderBy('name')
@@ -128,7 +128,7 @@ class SettingsController extends Controller
 
     public function storeUserAccount(Request $request): RedirectResponse
     {
-        if (! $request->user()?->isSuperAdmin()) {
+        if (! $request->user()?->canAccessAdminScreens()) {
             abort(403);
         }
 
@@ -179,7 +179,7 @@ class SettingsController extends Controller
 
         $company = Company::query()->findOrFail($validated['company_id']);
         $actor = $request->user();
-        if (! $actor?->canManageCompanyUsers($company)) {
+        if (! $actor?->canAccessAdminScreens() && ! $actor?->canManageCompanyUsers($company)) {
             abort(403);
         }
 
@@ -222,7 +222,7 @@ class SettingsController extends Controller
 
         $company = $membership->company;
         $user = $request->user();
-        if (! $user?->canManageCompanyUsers($company)) {
+        if (! $user?->canAccessAdminScreens() && ! $user?->canManageCompanyUsers($company)) {
             abort(403);
         }
 

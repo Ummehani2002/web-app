@@ -65,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('globalCompanyOptions', $companies);
             $view->with('globalSelectedCompany', $selectedCompany);
             $view->with('authIsSuperAdmin', $user?->isSuperAdmin() ?? false);
+            $view->with('authShowMastersSettingsNav', $user !== null && $user->canAccessAdminScreens());
 
             $permCompany = null;
             if ($selectedCompany !== '' && Schema::hasTable('companies')) {

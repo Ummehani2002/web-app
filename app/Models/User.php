@@ -59,6 +59,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Masters, Settings, and related routes. When company access enforcement is off,
+     * any authenticated user may use these screens (see config/company.php).
+     */
+    public function canAccessAdminScreens(): bool
+    {
+        if (! config('company.enforce_access', false)) {
+            return true;
+        }
+
+        return $this->isSuperAdmin();
+    }
+
+    /**
      * Uppercase D365 company codes the user may work in (all companies if super admin).
      *
      * @return Collection<int, string>

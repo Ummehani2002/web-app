@@ -14,7 +14,8 @@ class DashboardController extends Controller
         $companies = Company::orderBy('name')
             ->get(['id', 'name', 'd365_id']);
 
-        if ($user && ! $user->isSuperAdmin()) {
+        $enforce = (bool) config('company.enforce_access', false);
+        if ($enforce && $user && ! $user->isSuperAdmin()) {
             $allowed = $user->accessibleCompanyD365Codes();
             $companies = $companies->filter(function (Company $company) use ($allowed) {
                 return $allowed->contains(strtoupper((string) $company->company_id));
