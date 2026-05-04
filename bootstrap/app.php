@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ApiBearerTokenMiddleware;
+use App\Http\Middleware\EnsureSuperAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,10 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'api.bearer' => ApiBearerTokenMiddleware::class,
+            'super.admin' => EnsureSuperAdmin::class,
         ]);
 
-        // Session-authenticated JSON under web; browsers send CSRF from Blade, but
-        // tools like Postman only need the session cookie once logged in.
         $middleware->validateCsrfTokens(except: [
             'masters/api/*',
         ]);

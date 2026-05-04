@@ -58,12 +58,9 @@ class User extends Authenticatable
         return (bool) $this->is_super_admin;
     }
 
-    /**
-     * Masters, Settings, and related routes (no role gating — any signed-in user).
-     */
     public function canAccessAdminScreens(): bool
     {
-        return true;
+        return $this->isSuperAdmin();
     }
 
     /**

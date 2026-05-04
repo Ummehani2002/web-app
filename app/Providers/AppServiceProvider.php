@@ -13,18 +13,11 @@ use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        // Replace default serve command with Windows-safe custom command.
         $this->app->extend('command.serve', fn () => $this->app->make(ServeCommand::class));
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         Event::listen(
@@ -48,29 +41,19 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $user = Auth::user();
-
             $selectedCompany = strtoupper(trim((string) request()->query('company', '')));
-
             if ($selectedCompany === '' && $companies->isNotEmpty()) {
                 $selectedCompany = strtoupper((string) ($companies->first()->company_id ?? ''));
             }
 
             $view->with('globalCompanyOptions', $companies);
             $view->with('globalSelectedCompany', $selectedCompany);
-            $view->with('authIsSuperAdmin', $user !== null);
-            $view->with('authShowMastersSettingsNav', $user !== null);
-
-            if ($user) {
-                $view->with('canItemIssue', true);
-                $view->with('canPr', true);
-                $view->with('canGrn', true);
-                $view->with('canModulesGeneral', true);
-            } else {
-                $view->with('canItemIssue', false);
-                $view->with('canPr', false);
-                $view->with('canGrn', false);
-                $view->with('canModulesGeneral', false);
-            }
+            $view->with('authIsSuperAdmin', $user?->isSuperAdmin() ?? false);
+            $view->with('authShowMastersSettingsNav', $user?->isSuperAdmin() ?? false);
+            $view->with('canItemIssue', $user !== null);
+            $view->with('canPr', $user !== null);
+            $view->with('canGrn', $user !== null);
+            $view->with('canModulesGeneral', $user !== null);
         });
     }
 }
