@@ -22,6 +22,7 @@ return new class extends Migration
 
         Schema::table('item_units', function (Blueprint $table) {
             $table->foreignId('company_id')->nullable()->after('id')->constrained('companies')->nullOnDelete();
+            $table->index('item_id', 'item_units_item_id_index');
             $table->dropUnique('item_units_item_id_unit_id_unique');
             $table->unique(['company_id', 'item_id', 'unit_id']);
         });
@@ -32,6 +33,7 @@ return new class extends Migration
         Schema::table('item_units', function (Blueprint $table) {
             $table->dropUnique('item_units_company_id_item_id_unit_id_unique');
             $table->unique(['item_id', 'unit_id']);
+            $table->dropIndex('item_units_item_id_index');
             $table->dropConstrainedForeignId('company_id');
         });
 
