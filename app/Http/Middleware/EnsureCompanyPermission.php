@@ -11,6 +11,10 @@ class EnsureCompanyPermission
 {
     public function handle(Request $request, Closure $next, string $permission): Response
     {
+        if (! config('company.enforce_access', false)) {
+            return $next($request);
+        }
+
         $user = $request->user();
         if (! $user) {
             abort(403);

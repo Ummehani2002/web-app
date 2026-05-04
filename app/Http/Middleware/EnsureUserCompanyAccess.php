@@ -11,6 +11,10 @@ class EnsureUserCompanyAccess
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if (! config('company.enforce_access', false)) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if (! $user || ! Schema::hasTable('company_memberships')) {

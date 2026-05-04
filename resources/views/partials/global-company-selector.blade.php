@@ -100,10 +100,6 @@
         align-items: center;
         gap: 8px;
     }
-    .global-company-box.global-company-box--empty {
-        border-radius: 8px;
-        flex-wrap: wrap;
-    }
     .global-company-label {
         margin: 0;
         font-size: 11px;
@@ -112,13 +108,6 @@
         letter-spacing: 0.3px;
         text-transform: uppercase;
         white-space: nowrap;
-    }
-    .global-company-empty-msg {
-        margin: 0;
-        font-size: 12px;
-        color: #a4262c;
-        line-height: 1.35;
-        max-width: 280px;
     }
     .global-company-select {
         width: 160px;
@@ -164,14 +153,5 @@
     });
 })();
 </script>
-@else
-<div class="global-company-box global-company-box--empty">
-    <p class="global-company-label">Company</p>
-    @if($authIsSuperAdmin ?? false)
-        <p class="global-company-empty-msg">No companies in the system yet. Open <strong>Masters → Companies</strong> and create one.</p>
-    @else
-        <p class="global-company-empty-msg">You are not assigned to any company, or none exist yet. Ask an administrator to grant access under Settings → Roles &amp; permissions.</p>
-    @endif
-</div>
 @endif
 @endif

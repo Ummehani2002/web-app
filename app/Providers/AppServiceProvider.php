@@ -48,7 +48,8 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $user = Auth::user();
-            if ($user && ! $user->isSuperAdmin() && Schema::hasTable('company_memberships')) {
+            $enforce = (bool) config('company.enforce_access', false);
+            if ($enforce && $user && ! $user->isSuperAdmin() && Schema::hasTable('company_memberships')) {
                 $allowed = $user->accessibleCompanyD365Codes();
                 $companies = $companies->filter(function (Company $c) use ($allowed) {
                     return $allowed->contains(strtoupper((string) $c->d365_id));
@@ -71,6 +72,11 @@ class AppServiceProvider extends ServiceProvider
             }
 
             if ($user && $user->isSuperAdmin()) {
+                $view->with('canItemIssue', true);
+                $view->with('canPr', true);
+                $view->with('canGrn', true);
+                $view->with('canModulesGeneral', true);
+            } elseif (! $enforce && $user) {
                 $view->with('canItemIssue', true);
                 $view->with('canPr', true);
                 $view->with('canGrn', true);
