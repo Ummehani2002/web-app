@@ -52,8 +52,27 @@ class PurchReqController extends Controller
         $requestedCompanyCode = strtoupper(trim((string) $request->query('company', '')));
         $selectedCompany = $companies->first(fn (Company $c) => strtoupper((string) $c->d365_id) === $requestedCompanyCode) ?? $defaultCompany;
 
+        $filterMine = $request->boolean('mine');
+        $filterSubmittedOn = null;
+        $submittedOnInput = trim((string) $request->query('submitted_on', ''));
+        if ($submittedOnInput !== '') {
+            try {
+                $filterSubmittedOn = Carbon::parse($submittedOnInput)->toDateString();
+            } catch (\Throwable) {
+                $filterSubmittedOn = null;
+            }
+        }
+
+        $redirectParams = ['company' => strtoupper((string) $selectedCompany->d365_id)];
+        if ($filterMine) {
+            $redirectParams['mine'] = '1';
+        }
+        if ($filterSubmittedOn !== null) {
+            $redirectParams['submitted_on'] = $filterSubmittedOn;
+        }
+
         if ($selectedCompany && strtoupper((string) $selectedCompany->d365_id) !== $requestedCompanyCode) {
-            return redirect()->route('modules.procurement.purch-req', ['company' => strtoupper((string) $selectedCompany->d365_id)]);
+            return redirect()->route('modules.procurement.purch-req', $redirectParams);
         }
 
         $journals = PurchReqJournal::query()
@@ -61,6 +80,11 @@ class PurchReqController extends Controller
             ->with('postedBy:id,name')
             ->when($selectedCompany, function ($q) use ($selectedCompany) {
                 DataAreaId::whereUpperTrimEquals($q, 'company', (string) $selectedCompany->d365_id);
+            })
+            ->when($filterMine, fn ($q) => $q->where('posted_by', auth()->id()))
+            ->when($filterSubmittedOn !== null, function ($q) use ($filterSubmittedOn) {
+                $day = Carbon::parse($filterSubmittedOn);
+                $q->whereBetween('created_at', [$day->copy()->startOfDay(), $day->copy()->endOfDay()]);
             })
             ->orderByDesc('created_at')
             ->limit(300)
@@ -70,6 +94,8 @@ class PurchReqController extends Controller
             'companies' => $companies,
             'journals' => $journals,
             'currentCompanyCode' => $selectedCompany?->d365_id,
+            'filterMine' => $filterMine,
+            'filterSubmittedOn' => $filterSubmittedOn,
         ]);
     }
 
@@ -96,13 +122,13 @@ class PurchReqController extends Controller
                 'contact_name' => ['required', 'string', 'max:255'],
                 'remarks' => ['nullable', 'string', 'max:500'],
                 'department' => ['required', 'string', 'max:255'],
+                'start_date' => ['nullable', 'date'],
+                'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
                 'lines' => ['required', 'array', 'min:1'],
                 'lines.*.item_category' => ['nullable', 'string', 'max:100'],
                 'lines.*.item_id' => ['nullable', 'string', 'max:100'],
                 'lines.*.item_description' => ['nullable', 'string', 'max:255'],
                 'lines.*.required_date' => ['required', 'date'],
-                'lines.*.start_date' => ['nullable', 'date'],
-                'lines.*.end_date' => ['nullable', 'date'],
                 'lines.*.unit' => ['nullable', 'string', 'max:30'],
                 'lines.*.qty' => ['required', 'numeric', 'gt:0'],
                 'lines.*.currency' => ['required', 'string', 'max:10'],
@@ -157,6 +183,8 @@ class PurchReqController extends Controller
                         'ContactName' => $validated['contact_name'],
                         'Remarks' => $validated['remarks'] ?? '',
                         'Department' => $validated['department'],
+                        'StartDate' => (string) ($validated['start_date'] ?? ''),
+                        'EndDate' => (string) ($validated['end_date'] ?? ''),
                     ],
                     'PurchReqLines' => array_map(function (array $line, int $idx) use ($poolRow, $categoryCodeMap) {
                         $itemId = trim((string) ($line['item_id'] ?? ''));
@@ -171,8 +199,6 @@ class PurchReqController extends Controller
                             'ItemCategory' => $itemCategoryForD365,
                             'ItemDescription' => (string) ($line['item_description'] ?? ''),
                             'RequiredDate' => $line['required_date'],
-                            'StartDate' => (string) ($line['start_date'] ?? ''),
-                            'EndDate' => (string) ($line['end_date'] ?? ''),
                             'Unit' => (string) ($line['unit'] ?? ''),
                             'Qty' => (float) $line['qty'],
                             'Currency' => (string) ($line['currency'] ?? ''),
@@ -230,10 +256,10 @@ class PurchReqController extends Controller
                 if (! $draft->canBeManagedBy(auth()->user())) {
                     return response()->json(['status' => false, 'message' => 'You do not have access to submit or modify this purchase requisition.'], 403);
                 }
-                $draft->update(['request_id' => $requestId, 'pr_no' => $prNo, 'company' => $validated['company'], 'buying_legal_entity' => $validated['buying_legal_entity'] ?? $validated['company'], 'pr_date' => $validated['pr_date'], 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'pool_id' => $validated['pool_id'], 'contact_name' => $validated['contact_name'], 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'], 'lines' => $validated['lines'], 'attachments' => $attachmentsForDb, 'd365_response' => $result, 'posted_by' => auth()->id()]);
+                $draft->update(['request_id' => $requestId, 'pr_no' => $prNo, 'company' => $validated['company'], 'buying_legal_entity' => $validated['buying_legal_entity'] ?? $validated['company'], 'pr_date' => $validated['pr_date'], 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'start_date' => $validated['start_date'] ?? null, 'end_date' => $validated['end_date'] ?? null, 'pool_id' => $validated['pool_id'], 'contact_name' => $validated['contact_name'], 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'], 'lines' => $validated['lines'], 'attachments' => $attachmentsForDb, 'd365_response' => $result, 'posted_by' => auth()->id()]);
                 $journal = $draft->fresh();
             } else {
-                $journal = PurchReqJournal::create(['request_id' => $requestId, 'pr_no' => $prNo, 'company' => $validated['company'], 'buying_legal_entity' => $validated['buying_legal_entity'] ?? $validated['company'], 'pr_date' => $validated['pr_date'], 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'pool_id' => $validated['pool_id'], 'contact_name' => $validated['contact_name'], 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'], 'lines' => $validated['lines'], 'attachments' => $attachmentsForDb, 'd365_response' => $result, 'posted_by' => auth()->id()]);
+                $journal = PurchReqJournal::create(['request_id' => $requestId, 'pr_no' => $prNo, 'company' => $validated['company'], 'buying_legal_entity' => $validated['buying_legal_entity'] ?? $validated['company'], 'pr_date' => $validated['pr_date'], 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'start_date' => $validated['start_date'] ?? null, 'end_date' => $validated['end_date'] ?? null, 'pool_id' => $validated['pool_id'], 'contact_name' => $validated['contact_name'], 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'], 'lines' => $validated['lines'], 'attachments' => $attachmentsForDb, 'd365_response' => $result, 'posted_by' => auth()->id()]);
             }
 
             return response()->json(['status' => true, 'message' => 'Purchase Requisition submitted to D365.', 'request_id' => $requestId, 'pr_no' => $prNo, 'journal_id' => $journal->id, 'data' => $result]);
@@ -258,13 +284,13 @@ class PurchReqController extends Controller
             'contact_name' => ['nullable', 'string', 'max:255'],
             'remarks' => ['nullable', 'string', 'max:500'],
             'department' => ['nullable', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'lines' => ['nullable', 'array'],
             'lines.*.item_category' => ['nullable', 'string', 'max:100'],
             'lines.*.item_id' => ['nullable', 'string', 'max:100'],
             'lines.*.item_description' => ['nullable', 'string', 'max:255'],
             'lines.*.required_date' => ['nullable', 'date'],
-            'lines.*.start_date' => ['nullable', 'date'],
-            'lines.*.end_date' => ['nullable', 'date'],
             'lines.*.unit' => ['nullable', 'string', 'max:30'],
             'lines.*.qty' => ['nullable', 'numeric', 'gt:0'],
             'lines.*.currency' => ['nullable', 'string', 'max:10'],
@@ -288,7 +314,7 @@ class PurchReqController extends Controller
 
         $attachmentsForDb = array_map(fn ($a) => ['file_name' => $a['file_name'], 'file_type' => $a['file_type'], 'mime_type' => $a['mime_type'] ?? null, 'size_bytes' => $a['size_bytes'] ?? null, 'file_content' => $a['file_content']], $validated['attachments'] ?? []);
 
-        $journal = PurchReqJournal::create(['request_id' => null, 'pr_no' => null, 'company' => $validated['company'] ?? null, 'buying_legal_entity' => $validated['buying_legal_entity'] ?? ($validated['company'] ?? null), 'pr_date' => $validated['pr_date'] ?? null, 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'pool_id' => $validated['pool_id'] ?? null, 'contact_name' => $validated['contact_name'] ?? null, 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'] ?? null, 'lines' => $validated['lines'] ?? [], 'attachments' => $attachmentsForDb, 'd365_response' => null, 'posted_by' => auth()->id()]);
+        $journal = PurchReqJournal::create(['request_id' => null, 'pr_no' => null, 'company' => $validated['company'] ?? null, 'buying_legal_entity' => $validated['buying_legal_entity'] ?? ($validated['company'] ?? null), 'pr_date' => $validated['pr_date'] ?? null, 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'start_date' => $validated['start_date'] ?? null, 'end_date' => $validated['end_date'] ?? null, 'pool_id' => $validated['pool_id'] ?? null, 'contact_name' => $validated['contact_name'] ?? null, 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'] ?? null, 'lines' => $validated['lines'] ?? [], 'attachments' => $attachmentsForDb, 'd365_response' => null, 'posted_by' => auth()->id()]);
 
         return response()->json(['status' => true, 'message' => 'PR saved as draft.', 'journal_id' => $journal->id]);
     }
@@ -312,13 +338,13 @@ class PurchReqController extends Controller
             'contact_name' => ['nullable', 'string', 'max:255'],
             'remarks' => ['nullable', 'string', 'max:500'],
             'department' => ['nullable', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'lines' => ['nullable', 'array'],
             'lines.*.item_category' => ['nullable', 'string', 'max:100'],
             'lines.*.item_id' => ['nullable', 'string', 'max:100'],
             'lines.*.item_description' => ['nullable', 'string', 'max:255'],
             'lines.*.required_date' => ['nullable', 'date'],
-            'lines.*.start_date' => ['nullable', 'date'],
-            'lines.*.end_date' => ['nullable', 'date'],
             'lines.*.unit' => ['nullable', 'string', 'max:30'],
             'lines.*.qty' => ['nullable', 'numeric', 'gt:0'],
             'lines.*.currency' => ['nullable', 'string', 'max:10'],
@@ -342,7 +368,7 @@ class PurchReqController extends Controller
 
         $attachmentsForDb = array_map(fn ($a) => ['file_name' => $a['file_name'], 'file_type' => $a['file_type'], 'mime_type' => $a['mime_type'] ?? null, 'size_bytes' => $a['size_bytes'] ?? null, 'file_content' => $a['file_content']], $validated['attachments'] ?? []);
 
-        $journal->update(['company' => $validated['company'] ?? null, 'buying_legal_entity' => $validated['buying_legal_entity'] ?? ($validated['company'] ?? null), 'pr_date' => $validated['pr_date'] ?? null, 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'pool_id' => $validated['pool_id'] ?? null, 'contact_name' => $validated['contact_name'] ?? null, 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'] ?? null, 'lines' => $validated['lines'] ?? [], 'attachments' => $attachmentsForDb]);
+        $journal->update(['company' => $validated['company'] ?? null, 'buying_legal_entity' => $validated['buying_legal_entity'] ?? ($validated['company'] ?? null), 'pr_date' => $validated['pr_date'] ?? null, 'warehouse' => $validated['warehouse'] ?? null, 'project_id' => $validated['project_id'] ?? null, 'start_date' => $validated['start_date'] ?? null, 'end_date' => $validated['end_date'] ?? null, 'pool_id' => $validated['pool_id'] ?? null, 'contact_name' => $validated['contact_name'] ?? null, 'remarks' => $validated['remarks'] ?? null, 'department' => $validated['department'] ?? null, 'lines' => $validated['lines'] ?? [], 'attachments' => $attachmentsForDb]);
 
         return response()->json(['status' => true, 'message' => 'Draft updated successfully.', 'journal_id' => $journal->id]);
     }
@@ -373,6 +399,8 @@ class PurchReqController extends Controller
                 'pr_date' => $journal->pr_date?->format('Y-m-d'),
                 'warehouse' => $journal->warehouse,
                 'project_id' => $journal->project_id,
+                'start_date' => $journal->start_date?->format('Y-m-d'),
+                'end_date' => $journal->end_date?->format('Y-m-d'),
                 'pool_id' => $journal->pool_id,
                 'contact_name' => $journal->contact_name,
                 'remarks' => $journal->remarks,
@@ -855,10 +883,8 @@ class PurchReqController extends Controller
                 $line['fd_location_id'] = '';
             }
 
-            if (! $flags['requires_start_end_date']) {
-                $line['start_date'] = '';
-                $line['end_date'] = '';
-            }
+            $line['start_date'] = '';
+            $line['end_date'] = '';
 
             return $line;
         }, $lines);
@@ -1055,8 +1081,23 @@ class PurchReqController extends Controller
             $errors['attachments'] = ['At least one attachment is required for this pool.'];
         }
 
-        $validated['start_date'] = null;
-        $validated['end_date'] = null;
+        $headerStart = trim((string) ($validated['start_date'] ?? ''));
+        $headerEnd = trim((string) ($validated['end_date'] ?? ''));
+
+        if ($flags['requires_start_end_date']) {
+            if ($headerStart === '') {
+                $errors['start_date'] = ['Start date is required for this pool.'];
+            }
+            if ($headerEnd === '') {
+                $errors['end_date'] = ['End date is required for this pool.'];
+            }
+            if ($headerStart !== '' && $headerEnd !== '' && $headerEnd < $headerStart) {
+                $errors['end_date'] = ['End date must be on or after start date.'];
+            }
+        } else {
+            $validated['start_date'] = null;
+            $validated['end_date'] = null;
+        }
 
         $projectId = trim((string) ($validated['project_id'] ?? ''));
 
@@ -1066,8 +1107,8 @@ class PurchReqController extends Controller
             $iid = trim((string) ($line['item_id'] ?? ''));
             $fdLoc = trim((string) ($line['fd_location_id'] ?? ''));
             $budgetResource = trim((string) ($line['budget_resource_id'] ?? ''));
-            $lineStart = trim((string) ($line['start_date'] ?? ''));
-            $lineEnd = trim((string) ($line['end_date'] ?? ''));
+            $validated['lines'][$idx]['start_date'] = '';
+            $validated['lines'][$idx]['end_date'] = '';
             if ($flags['has_item_category'] && $cat === '') {
                 $errors["lines.$idx.item_category"] = ["Line {$i}: Item category is required for this pool."];
             }
@@ -1105,21 +1146,6 @@ class PurchReqController extends Controller
                 }
             } elseif (! $flags['uses_project']) {
                 $validated['lines'][$idx]['budget_resource_id'] = '';
-            }
-
-            if ($flags['requires_start_end_date']) {
-                if ($lineStart === '') {
-                    $errors["lines.$idx.start_date"] = ["Line {$i}: Start date is required for this pool."];
-                }
-                if ($lineEnd === '') {
-                    $errors["lines.$idx.end_date"] = ["Line {$i}: End date is required for this pool."];
-                }
-                if ($lineStart !== '' && $lineEnd !== '' && $lineEnd < $lineStart) {
-                    $errors["lines.$idx.end_date"] = ["Line {$i}: End date must be on or after start date."];
-                }
-            } else {
-                $validated['lines'][$idx]['start_date'] = '';
-                $validated['lines'][$idx]['end_date'] = '';
             }
         }
 

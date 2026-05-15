@@ -139,6 +139,37 @@
         .history-table thead th:last-child { background: #faf9f8; }
         .history-actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
         .draft-label { color: #8a8886; font-style: italic; font-weight: 500; }
+        .list-filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 10px 14px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #edebe9;
+            background: #faf9f8;
+        }
+        .list-filters .filter-mine-btn.active {
+            border-color: #106ebe;
+            background: #106ebe;
+            color: #fff;
+        }
+        .list-filter-date {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: #605e5c;
+            font-weight: 600;
+        }
+        .list-filter-date input[type="date"] {
+            border: 1px solid #8a8886;
+            border-radius: 2px;
+            padding: 5px 8px;
+            font-size: 13px;
+            min-width: 150px;
+            background: #fff;
+        }
+        .list-filter-actions { display: flex; gap: 6px; align-items: center; }
         #appSidebar { flex-shrink: 0; }
     </style>
     @include('settings.rbac.partials.styles')
@@ -222,6 +253,14 @@
                                 <option value="">— Select Warehouse —</option>
                             </select>
                         </div>
+                        <div class="field hidden" id="field-start-date">
+                            <label>Start Date <span style="color:#a4262c">*</span></label>
+                            <input id="start-date" type="date">
+                        </div>
+                        <div class="field hidden" id="field-end-date">
+                            <label>End Date <span style="color:#a4262c">*</span></label>
+                            <input id="end-date" type="date">
+                        </div>
                     </div>
 
                     <div class="fields hidden" id="pool-detail-fields">
@@ -261,8 +300,6 @@
                                     <th data-col="item-id">Item ID</th>
                                     <th>Description</th>
                                     <th>Required Date</th>
-                                    <th data-col="start-date">Start Date</th>
-                                    <th data-col="end-date">End Date</th>
                                     <th>Unit</th>
                                     <th>Qty</th>
                                     <th>Action</th>
@@ -270,7 +307,7 @@
                             </thead>
                             <tbody id="lines-body">
                                 <tr id="no-lines-row">
-                                    <td colspan="11" class="empty-note">No lines yet — click <strong>+ Add Line</strong></td>
+                                    <td colspan="9" class="empty-note">No lines yet — click <strong>+ Add Line</strong></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -308,6 +345,27 @@
                 </div>
                 <div class="card">
                     <div class="card-head">Submitted Requisitions</div>
+                    <div class="list-filters">
+                        <button
+                            type="button"
+                            id="filter-mine-btn"
+                            class="btn btn-sm filter-mine-btn{{ !empty($filterMine) ? ' active' : '' }}"
+                            aria-pressed="{{ !empty($filterMine) ? 'true' : 'false' }}"
+                        >Created by me</button>
+                        <label class="list-filter-date" for="filter-submitted-on">
+                            <span>Submitted on</span>
+                            <input
+                                type="date"
+                                id="filter-submitted-on"
+                                value="{{ $filterSubmittedOn ?? '' }}"
+                                aria-label="Filter by submitted date"
+                            >
+                        </label>
+                        <div class="list-filter-actions">
+                            <button type="button" id="filter-apply-btn" class="btn btn-sm btn-primary">Apply</button>
+                            <button type="button" id="filter-clear-btn" class="btn btn-sm">Clear</button>
+                        </div>
+                    </div>
                     <div class="table-wrap">
                     <table class="history-table">
                         <thead>
@@ -333,7 +391,10 @@
                                 $isDraft = empty($j->request_id) && empty($j->pr_no);
                                 $canManagePr = $j->canBeManagedBy(auth()->user());
                             @endphp
-                            <tr>
+                            <tr
+                                data-posted-by="{{ (int) ($j->posted_by ?? 0) }}"
+                                data-submitted-on="{{ $j->created_at?->format('Y-m-d') ?? '' }}"
+                            >
                                 <td>
                                     @if($isDraft)
                                         <span class="draft-label">Draft #{{ $j->id }}</span>
@@ -372,7 +433,13 @@
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="13" class="empty-note">No requisitions submitted yet.</td></tr>
+                            <tr><td colspan="13" class="empty-note">
+                                @if(!empty($filterMine) || !empty($filterSubmittedOn))
+                                    No requisitions match the current filters.
+                                @else
+                                    No requisitions submitted yet.
+                                @endif
+                            </td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -387,6 +454,68 @@
     (() => {
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const authUserId = {{ (int) auth()->id() }};
+        const filterMineBtn = document.getElementById('filter-mine-btn');
+        const filterSubmittedOnEl = document.getElementById('filter-submitted-on');
+        const filterApplyBtn = document.getElementById('filter-apply-btn');
+        const filterClearBtn = document.getElementById('filter-clear-btn');
+
+        function buildListUrl(overrides = {}) {
+            const url = new URL(window.location.href);
+            const company = (
+                document.getElementById('global-company-select')?.value
+                || url.searchParams.get('company')
+                || @json(strtoupper((string) ($currentCompanyCode ?? '')))
+            ).trim().toUpperCase();
+            if (company) {
+                url.searchParams.set('company', company);
+            } else {
+                url.searchParams.delete('company');
+            }
+
+            const mine = overrides.mine !== undefined
+                ? overrides.mine
+                : filterMineBtn?.classList.contains('active');
+            const submittedOn = overrides.submittedOn !== undefined
+                ? overrides.submittedOn
+                : (filterSubmittedOnEl?.value ?? '').trim();
+
+            if (mine) {
+                url.searchParams.set('mine', '1');
+            } else {
+                url.searchParams.delete('mine');
+            }
+
+            if (submittedOn) {
+                url.searchParams.set('submitted_on', submittedOn);
+            } else {
+                url.searchParams.delete('submitted_on');
+            }
+
+            return url;
+        }
+
+        function navigateListFilters(overrides = {}) {
+            window.location.href = buildListUrl(overrides).toString();
+        }
+
+        filterMineBtn?.addEventListener('click', () => {
+            navigateListFilters({ mine: !filterMineBtn.classList.contains('active') });
+        });
+        filterApplyBtn?.addEventListener('click', () => navigateListFilters({}));
+        filterSubmittedOnEl?.addEventListener('change', () => navigateListFilters({}));
+        filterClearBtn?.addEventListener('click', () => navigateListFilters({ mine: false, submittedOn: '' }));
+
+        function rowMatchesListFilters(tr) {
+            const mineActive = filterMineBtn?.classList.contains('active');
+            const filterDate = (filterSubmittedOnEl?.value ?? '').trim();
+            if (mineActive && String(tr.dataset.postedBy ?? '') !== String(authUserId)) {
+                return false;
+            }
+            if (filterDate && String(tr.dataset.submittedOn ?? '') !== filterDate) {
+                return false;
+            }
+            return true;
+        }
 
         const statusBox     = document.getElementById('status-box');
         const listStatusBox = document.getElementById('list-status-box');
@@ -396,10 +525,14 @@
         const prNoEl        = document.getElementById('pr-no');
         const prDateEl      = document.getElementById('pr-date');
         const warehouseEl   = document.getElementById('warehouse');
-        const LINE_TABLE_COLSPAN = 11;
+        const LINE_TABLE_COLSPAN = 9;
         const projectEl     = document.getElementById('project-id');
         const fieldProject  = document.getElementById('field-project');
         const fieldWarehouse = document.getElementById('field-warehouse');
+        const fieldStartDate = document.getElementById('field-start-date');
+        const fieldEndDate = document.getElementById('field-end-date');
+        const startDateEl   = document.getElementById('start-date');
+        const endDateEl     = document.getElementById('end-date');
         const poolDetailFields = document.getElementById('pool-detail-fields');
         const attBlock      = document.getElementById('pr-attachments-block');
         const poolEl        = document.getElementById('pool-id');
@@ -651,16 +784,14 @@
             return HEP_POOL_IDS.has(poolId);
         }
 
-        function applyLineStartEndColumns(p) {
-            const show = p != null && poolRequiresStartEndDate();
-            document.querySelectorAll('#lines-table [data-col="start-date"], #lines-table [data-col="end-date"]').forEach((el) => {
-                el.classList.toggle('line-col-collapsed', !show);
-            });
+        function applyStartEndDateUi() {
+            const show = poolRequiresStartEndDate();
+            fieldStartDate?.classList.toggle('hidden', !show);
+            fieldEndDate?.classList.toggle('hidden', !show);
             if (!show) {
-                linesBody.querySelectorAll('tr[data-line] .lf-start-date, tr[data-line] .lf-end-date').forEach((el) => { el.value = ''; });
+                if (startDateEl) startDateEl.value = '';
+                if (endDateEl) endDateEl.value = '';
             }
-            const detailsRows = linesBody.querySelectorAll('tr[data-line-detail] td[colspan]');
-            detailsRows.forEach((td) => { td.colSpan = LINE_TABLE_COLSPAN; });
         }
 
         function poolNeedsFdLocation() {
@@ -886,7 +1017,6 @@
             document.querySelectorAll('#lines-table [data-col="item-id"]').forEach((el) => {
                 el.classList.toggle('line-col-collapsed', !showItem);
             });
-            applyLineStartEndColumns(p);
         }
 
         function applyPoolUi() {
@@ -899,6 +1029,7 @@
                 poolDetailFields?.classList.add('hidden');
                 attBlock?.classList.add('hidden');
                 applyPoolLineColumns(null);
+                applyStartEndDateUi();
                 syncAllLineUnitsForPoolMode();
                 applyBudgetResourceUi();
                 applyFdLocationUi();
@@ -910,6 +1041,7 @@
             poolDetailFields?.classList.remove('hidden');
             attBlock?.classList.remove('hidden');
             applyPoolLineColumns(p);
+            applyStartEndDateUi();
             if (p && !p.has_item_id) {
                 linesBody.querySelectorAll('tr[data-line] .lf-item-id').forEach((el) => { el.value = ''; });
             }
@@ -1047,8 +1179,6 @@
                 </td>
                 <td><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
                 <td><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
-                <td data-col="start-date"><input class="line-input req-date lf-start-date" type="date" value="${line.start_date ?? ''}"></td>
-                <td data-col="end-date"><input class="line-input req-date lf-end-date" type="date" value="${line.end_date ?? ''}"></td>
                 <td>
                     <select class="line-select unit-select lf-unit">
                         <option value="${line.unit ?? ''}">${line.unit ? line.unit : 'Select item first'}</option>
@@ -1498,8 +1628,6 @@
                     item_id:            tr.querySelector('.lf-item-id').value.trim(),
                     item_description:   tr.querySelector('.lf-desc').value.trim(),
                     required_date:      tr.querySelector('.lf-req-date').value,
-                    start_date:         poolRequiresStartEndDate() ? (tr.querySelector('.lf-start-date')?.value ?? '') : '',
-                    end_date:           poolRequiresStartEndDate() ? (tr.querySelector('.lf-end-date')?.value ?? '') : '',
                     unit:               tr.querySelector('.lf-unit').value.trim(),
                     qty:                tr.querySelector('.lf-qty').value,
                     currency:           details?.querySelector('.lf-currency')?.value?.trim() ?? 'AED',
@@ -1586,6 +1714,22 @@
                 showStatus('Project is required for this pool.', 'error');
                 return;
             }
+            if (poolRequiresStartEndDate()) {
+                const startVal = (startDateEl?.value ?? '').trim();
+                const endVal = (endDateEl?.value ?? '').trim();
+                if (!startVal) {
+                    showStatus('Start date is required for this pool.', 'error');
+                    return;
+                }
+                if (!endVal) {
+                    showStatus('End date is required for this pool.', 'error');
+                    return;
+                }
+                if (endVal < startVal) {
+                    showStatus('End date must be on or after start date.', 'error');
+                    return;
+                }
+            }
             if (poolCfg.has_attachment && attachments.length === 0) {
                 showStatus('This pool requires at least one attachment.', 'error');
                 return;
@@ -1631,20 +1775,6 @@
                     showStatus(`Line ${i + 1}: Budget resource is required for this pool.`, 'error');
                     return;
                 }
-                if (poolRequiresStartEndDate()) {
-                    if (!String(ln.start_date ?? '').trim()) {
-                        showStatus(`Line ${i + 1}: Start date is required for this pool.`, 'error');
-                        return;
-                    }
-                    if (!String(ln.end_date ?? '').trim()) {
-                        showStatus(`Line ${i + 1}: End date is required for this pool.`, 'error');
-                        return;
-                    }
-                    if (ln.end_date < ln.start_date) {
-                        showStatus(`Line ${i + 1}: End date must be on or after start date.`, 'error');
-                        return;
-                    }
-                }
             }
 
             postBtn.disabled = true;
@@ -1657,6 +1787,8 @@
                 pr_date:      prDateEl.value,
                 warehouse:    warehouseEl.value.trim(),
                 project_id:   (projectEl?.value ?? '').trim(),
+                start_date:   poolRequiresStartEndDate() ? (startDateEl?.value ?? '') : null,
+                end_date:     poolRequiresStartEndDate() ? (endDateEl?.value ?? '') : null,
                 pool_id:      poolEl.value.trim(),
                 contact_name: contactEl.value.trim(),
                 remarks:      remarksEl.value.trim(),
@@ -1728,6 +1860,8 @@
                 pr_date: prDateEl.value || null,
                 warehouse: warehouseEl.value.trim() || null,
                 project_id: (projectEl?.value ?? '').trim() || null,
+                start_date: poolRequiresStartEndDate() ? (startDateEl?.value || null) : null,
+                end_date: poolRequiresStartEndDate() ? (endDateEl?.value || null) : null,
                 pool_id: poolEl.value.trim() || null,
                 contact_name: contactEl.value.trim() || null,
                 remarks: remarksEl.value.trim() || null,
@@ -1784,13 +1918,22 @@
                 ? `<button type="button" class="btn btn-danger btn-sm pr-delete-btn" data-id="${data.journal_id}" data-can-manage="1">Delete</button>`
                 : '';
 
+            const submittedOnIso = [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, '0'),
+                String(now.getDate()).padStart(2, '0'),
+            ].join('-');
+
             const tr = document.createElement('tr');
+            tr.dataset.postedBy = String(authUserId);
+            tr.dataset.submittedOn = submittedOnIso;
             tr.innerHTML = `
                 <td><strong>${data.request_id ?? '—'}</strong></td>
                 <td>${data.pr_no ?? '—'}</td>
                 <td>${payload.company}</td>
                 <td>${payload.warehouse ?? '—'}</td>
                 <td>${payload.project_id ?? '—'}</td>
+                <td>${payload.pool_id ?? '—'}</td>
                 <td>${payload.contact_name}</td>
                 <td><span class="badge badge-count">${payload.lines.length}</span></td>
                 <td>${payload.attachments.length
@@ -1806,6 +1949,9 @@
                     </div>
                 </td>
             `;
+            if (!rowMatchesListFilters(tr)) {
+                return;
+            }
             historyBody.prepend(tr);
         }
 
@@ -1819,6 +1965,8 @@
             prDateEl.value      = todayStr();
             if (warehouseEl) warehouseEl.innerHTML = '<option value="">— Select Warehouse —</option>';
             if (projectEl) projectEl.value = '';
+            if (startDateEl) startDateEl.value = '';
+            if (endDateEl) endDateEl.value = '';
             if (poolEl) {
                 poolEl.value = '';
             }
@@ -1942,6 +2090,15 @@
                 if (projectEl) {
                     projectEl.value = j.project_id || '';
                 }
+                let headerStart = j.start_date ? String(j.start_date).slice(0, 10) : '';
+                let headerEnd = j.end_date ? String(j.end_date).slice(0, 10) : '';
+                if (!headerStart && Array.isArray(j.lines) && j.lines.length) {
+                    const first = j.lines[0];
+                    headerStart = first.start_date ? String(first.start_date).slice(0, 10) : '';
+                    headerEnd = first.end_date ? String(first.end_date).slice(0, 10) : '';
+                }
+                if (startDateEl) startDateEl.value = headerStart;
+                if (endDateEl) endDateEl.value = headerEnd;
                 applyPoolUi();
                 if (poolNeedsFdLocation()) {
                     await loadFdLocations(j.company || '');
