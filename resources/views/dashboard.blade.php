@@ -222,9 +222,133 @@
             gap: 14px;
             width: 100%;
         }
+        .dashboard-panels {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+            gap: 16px;
+            align-items: start;
+        }
+        .dashboard-panels .company-hero {
+            margin-top: 0;
+            min-height: 420px;
+        }
+        .dashboard-calendar {
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(11, 22, 30, 0.72);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 14px 30px rgba(16, 24, 40, 0.24);
+            padding: 16px 14px 14px;
+            color: #fff;
+        }
+        .dashboard-calendar-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .dashboard-calendar-head h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            text-align: center;
+            flex: 1;
+        }
+        .calendar-nav-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .calendar-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+        .calendar-weekdays,
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-weekdays {
+            margin-bottom: 6px;
+        }
+        .calendar-weekdays span {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.72);
+            padding: 2px 0;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .calendar-day:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.14);
+        }
+        .calendar-day.is-outside {
+            color: rgba(255, 255, 255, 0.38);
+        }
+        .calendar-day.is-today {
+            background: #106ebe;
+            color: #fff;
+            font-weight: 700;
+        }
+        .calendar-day.is-selected:not(.is-today) {
+            background: rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+        .calendar-day:disabled {
+            cursor: default;
+            visibility: hidden;
+        }
+        .calendar-footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        .calendar-today-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .calendar-today-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
         @media (max-width: 1024px) {
             .main::before {
                 inset: 0;
+            }
+        }
+        @media (max-width: 1100px) {
+            .dashboard-panels {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-panels .company-hero {
+                min-height: 460px;
             }
         }
         @media (max-width: 860px) {
@@ -306,6 +430,7 @@
             }
         @endphp
 
+        <div class="dashboard-panels">
         <section class="company-hero{{ $companyHeroBgUrl ? ' company-hero--custom-bg' : '' }}" aria-label="Selected company dashboard hero">
             @if ($companyHeroBgUrl)
                 <img class="company-hero-bg" src="{{ $companyHeroBgUrl }}" alt="{{ $companyCode }} workspace background">
@@ -345,8 +470,117 @@
                 </div>
             </div>
         </section>
+
+        <aside class="dashboard-calendar" aria-label="Calendar">
+            <div class="dashboard-calendar-head">
+                <button type="button" class="calendar-nav-btn" id="cal-prev" aria-label="Previous month">&#8249;</button>
+                <h3 id="cal-month-label"></h3>
+                <button type="button" class="calendar-nav-btn" id="cal-next" aria-label="Next month">&#8250;</button>
+            </div>
+            <div class="calendar-weekdays" aria-hidden="true">
+                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="calendar-days" id="cal-days" role="grid" aria-labelledby="cal-month-label"></div>
+            <div class="calendar-footer">
+                <button type="button" class="calendar-today-btn" id="cal-today">Today</button>
+            </div>
+        </aside>
+        </div>
         </div>
     </main>
+
+    <script>
+    (() => {
+        const monthLabel = document.getElementById('cal-month-label');
+        const daysEl = document.getElementById('cal-days');
+        const prevBtn = document.getElementById('cal-prev');
+        const nextBtn = document.getElementById('cal-next');
+        const todayBtn = document.getElementById('cal-today');
+        if (!monthLabel || !daysEl) return;
+
+        const today = new Date();
+        let viewYear = today.getFullYear();
+        let viewMonth = today.getMonth();
+        let selected = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function sameDay(a, b) {
+            return a.getFullYear() === b.getFullYear()
+                && a.getMonth() === b.getMonth()
+                && a.getDate() === b.getDate();
+        }
+
+        function renderCalendar() {
+            monthLabel.textContent = monthNames[viewMonth] + ' ' + viewYear;
+            daysEl.innerHTML = '';
+
+            const first = new Date(viewYear, viewMonth, 1);
+            const startOffset = first.getDay();
+            const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+            const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+            const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+            for (let i = 0; i < totalCells; i++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'calendar-day';
+                btn.setAttribute('role', 'gridcell');
+
+                let cellDate;
+                let outside = false;
+                if (i < startOffset) {
+                    const day = daysInPrev - startOffset + i + 1;
+                    cellDate = new Date(viewYear, viewMonth - 1, day);
+                    outside = true;
+                } else if (i >= startOffset + daysInMonth) {
+                    const day = i - (startOffset + daysInMonth) + 1;
+                    cellDate = new Date(viewYear, viewMonth + 1, day);
+                    outside = true;
+                } else {
+                    const day = i - startOffset + 1;
+                    cellDate = new Date(viewYear, viewMonth, day);
+                }
+
+                btn.textContent = String(cellDate.getDate());
+                if (outside) btn.classList.add('is-outside');
+                if (sameDay(cellDate, today)) btn.classList.add('is-today');
+                if (sameDay(cellDate, selected)) btn.classList.add('is-selected');
+
+                btn.addEventListener('click', () => {
+                    selected = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+                    if (selected.getMonth() !== viewMonth || selected.getFullYear() !== viewYear) {
+                        viewYear = selected.getFullYear();
+                        viewMonth = selected.getMonth();
+                    }
+                    renderCalendar();
+                });
+
+                daysEl.appendChild(btn);
+            }
+        }
+
+        prevBtn?.addEventListener('click', () => {
+            viewMonth -= 1;
+            if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; }
+            renderCalendar();
+        });
+        nextBtn?.addEventListener('click', () => {
+            viewMonth += 1;
+            if (viewMonth > 11) { viewMonth = 0; viewYear += 1; }
+            renderCalendar();
+        });
+        todayBtn?.addEventListener('click', () => {
+            viewYear = today.getFullYear();
+            viewMonth = today.getMonth();
+            selected = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            renderCalendar();
+        });
+
+        renderCalendar();
+    })();
+    </script>
 
 </body>
 </html>

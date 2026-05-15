@@ -53,22 +53,10 @@ class PurchReqController extends Controller
         $selectedCompany = $companies->first(fn (Company $c) => strtoupper((string) $c->d365_id) === $requestedCompanyCode) ?? $defaultCompany;
 
         $filterMine = $request->boolean('mine');
-        $filterSubmittedOn = null;
-        $submittedOnInput = trim((string) $request->query('submitted_on', ''));
-        if ($submittedOnInput !== '') {
-            try {
-                $filterSubmittedOn = Carbon::parse($submittedOnInput)->toDateString();
-            } catch (\Throwable) {
-                $filterSubmittedOn = null;
-            }
-        }
 
         $redirectParams = ['company' => strtoupper((string) $selectedCompany->d365_id)];
         if ($filterMine) {
             $redirectParams['mine'] = '1';
-        }
-        if ($filterSubmittedOn !== null) {
-            $redirectParams['submitted_on'] = $filterSubmittedOn;
         }
 
         if ($selectedCompany && strtoupper((string) $selectedCompany->d365_id) !== $requestedCompanyCode) {
@@ -82,10 +70,6 @@ class PurchReqController extends Controller
                 DataAreaId::whereUpperTrimEquals($q, 'company', (string) $selectedCompany->d365_id);
             })
             ->when($filterMine, fn ($q) => $q->where('posted_by', auth()->id()))
-            ->when($filterSubmittedOn !== null, function ($q) use ($filterSubmittedOn) {
-                $day = Carbon::parse($filterSubmittedOn);
-                $q->whereBetween('created_at', [$day->copy()->startOfDay(), $day->copy()->endOfDay()]);
-            })
             ->orderByDesc('created_at')
             ->limit(300)
             ->get();
@@ -95,7 +79,6 @@ class PurchReqController extends Controller
             'journals' => $journals,
             'currentCompanyCode' => $selectedCompany?->d365_id,
             'filterMine' => $filterMine,
-            'filterSubmittedOn' => $filterSubmittedOn,
         ]);
     }
 

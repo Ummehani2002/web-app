@@ -142,7 +142,7 @@
         .list-filters {
             display: flex;
             flex-wrap: wrap;
-            align-items: flex-end;
+            align-items: center;
             gap: 10px 14px;
             padding: 10px 14px;
             border-bottom: 1px solid #edebe9;
@@ -153,23 +153,6 @@
             background: #106ebe;
             color: #fff;
         }
-        .list-filter-date {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            font-size: 11px;
-            color: #605e5c;
-            font-weight: 600;
-        }
-        .list-filter-date input[type="date"] {
-            border: 1px solid #8a8886;
-            border-radius: 2px;
-            padding: 5px 8px;
-            font-size: 13px;
-            min-width: 150px;
-            background: #fff;
-        }
-        .list-filter-actions { display: flex; gap: 6px; align-items: center; }
         #appSidebar { flex-shrink: 0; }
     </style>
     @include('settings.rbac.partials.styles')
@@ -352,19 +335,6 @@
                             class="btn btn-sm filter-mine-btn{{ !empty($filterMine) ? ' active' : '' }}"
                             aria-pressed="{{ !empty($filterMine) ? 'true' : 'false' }}"
                         >Created by me</button>
-                        <label class="list-filter-date" for="filter-submitted-on">
-                            <span>Submitted on</span>
-                            <input
-                                type="date"
-                                id="filter-submitted-on"
-                                value="{{ $filterSubmittedOn ?? '' }}"
-                                aria-label="Filter by submitted date"
-                            >
-                        </label>
-                        <div class="list-filter-actions">
-                            <button type="button" id="filter-apply-btn" class="btn btn-sm btn-primary">Apply</button>
-                            <button type="button" id="filter-clear-btn" class="btn btn-sm">Clear</button>
-                        </div>
                     </div>
                     <div class="table-wrap">
                     <table class="history-table">
@@ -391,10 +361,7 @@
                                 $isDraft = empty($j->request_id) && empty($j->pr_no);
                                 $canManagePr = $j->canBeManagedBy(auth()->user());
                             @endphp
-                            <tr
-                                data-posted-by="{{ (int) ($j->posted_by ?? 0) }}"
-                                data-submitted-on="{{ $j->created_at?->format('Y-m-d') ?? '' }}"
-                            >
+                            <tr data-posted-by="{{ (int) ($j->posted_by ?? 0) }}">
                                 <td>
                                     @if($isDraft)
                                         <span class="draft-label">Draft #{{ $j->id }}</span>
@@ -434,8 +401,8 @@
                             </tr>
                             @empty
                             <tr><td colspan="13" class="empty-note">
-                                @if(!empty($filterMine) || !empty($filterSubmittedOn))
-                                    No requisitions match the current filters.
+                                @if(!empty($filterMine))
+                                    No requisitions match the current filter.
                                 @else
                                     No requisitions submitted yet.
                                 @endif
@@ -455,11 +422,8 @@
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const authUserId = {{ (int) auth()->id() }};
         const filterMineBtn = document.getElementById('filter-mine-btn');
-        const filterSubmittedOnEl = document.getElementById('filter-submitted-on');
-        const filterApplyBtn = document.getElementById('filter-apply-btn');
-        const filterClearBtn = document.getElementById('filter-clear-btn');
 
-        function buildListUrl(overrides = {}) {
+        function buildListUrl(mine) {
             const url = new URL(window.location.href);
             const company = (
                 document.getElementById('global-company-select')?.value
@@ -471,50 +435,23 @@
             } else {
                 url.searchParams.delete('company');
             }
-
-            const mine = overrides.mine !== undefined
-                ? overrides.mine
-                : filterMineBtn?.classList.contains('active');
-            const submittedOn = overrides.submittedOn !== undefined
-                ? overrides.submittedOn
-                : (filterSubmittedOnEl?.value ?? '').trim();
-
             if (mine) {
                 url.searchParams.set('mine', '1');
             } else {
                 url.searchParams.delete('mine');
             }
-
-            if (submittedOn) {
-                url.searchParams.set('submitted_on', submittedOn);
-            } else {
-                url.searchParams.delete('submitted_on');
-            }
-
+            url.searchParams.delete('submitted_on');
             return url;
         }
 
-        function navigateListFilters(overrides = {}) {
-            window.location.href = buildListUrl(overrides).toString();
-        }
-
         filterMineBtn?.addEventListener('click', () => {
-            navigateListFilters({ mine: !filterMineBtn.classList.contains('active') });
+            const nextMine = !filterMineBtn.classList.contains('active');
+            window.location.href = buildListUrl(nextMine).toString();
         });
-        filterApplyBtn?.addEventListener('click', () => navigateListFilters({}));
-        filterSubmittedOnEl?.addEventListener('change', () => navigateListFilters({}));
-        filterClearBtn?.addEventListener('click', () => navigateListFilters({ mine: false, submittedOn: '' }));
 
         function rowMatchesListFilters(tr) {
             const mineActive = filterMineBtn?.classList.contains('active');
-            const filterDate = (filterSubmittedOnEl?.value ?? '').trim();
-            if (mineActive && String(tr.dataset.postedBy ?? '') !== String(authUserId)) {
-                return false;
-            }
-            if (filterDate && String(tr.dataset.submittedOn ?? '') !== filterDate) {
-                return false;
-            }
-            return true;
+            return !mineActive || String(tr.dataset.postedBy ?? '') === String(authUserId);
         }
 
         const statusBox     = document.getElementById('status-box');
@@ -1918,15 +1855,8 @@
                 ? `<button type="button" class="btn btn-danger btn-sm pr-delete-btn" data-id="${data.journal_id}" data-can-manage="1">Delete</button>`
                 : '';
 
-            const submittedOnIso = [
-                now.getFullYear(),
-                String(now.getMonth() + 1).padStart(2, '0'),
-                String(now.getDate()).padStart(2, '0'),
-            ].join('-');
-
             const tr = document.createElement('tr');
             tr.dataset.postedBy = String(authUserId);
-            tr.dataset.submittedOn = submittedOnIso;
             tr.innerHTML = `
                 <td><strong>${data.request_id ?? '—'}</strong></td>
                 <td>${data.pr_no ?? '—'}</td>
