@@ -248,13 +248,16 @@
             gap: 8px;
             margin-bottom: 12px;
         }
-        .dashboard-calendar-head h3 {
+        .dashboard-calendar-head h3,
+        .dashboard-calendar #cal-month-label {
             margin: 0;
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.2px;
             text-align: center;
             flex: 1;
+            color: #fff !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
         .calendar-nav-btn {
             width: 32px;
