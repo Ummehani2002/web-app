@@ -249,15 +249,13 @@
                         </div>
                         <div class="field hidden" id="field-project">
                             <label>Project <span style="color:#a4262c">*</span></label>
-                            <select id="project-id">
-                                <option value="">— Select Project —</option>
-                            </select>
+                            <input type="text" id="project-id" list="project-datalist" placeholder="Type project code or name to search" autocomplete="off">
+                            <datalist id="project-datalist"></datalist>
                         </div>
                         <div class="field hidden" id="field-warehouse">
                             <label>Warehouse <span style="color:#a4262c">*</span></label>
-                            <select id="warehouse">
-                                <option value="">— Select Warehouse —</option>
-                            </select>
+                            <input type="text" id="warehouse" list="warehouse-datalist" placeholder="Type warehouse code or name to search" autocomplete="off">
+                            <datalist id="warehouse-datalist"></datalist>
                         </div>
                         <div class="field hidden" id="field-start-date">
                             <label>Start Date <span style="color:#a4262c">*</span></label>
@@ -485,8 +483,10 @@
         const prNoEl        = document.getElementById('pr-no');
         const prDateEl      = document.getElementById('pr-date');
         const warehouseEl   = document.getElementById('warehouse');
+        const warehouseListEl = document.getElementById('warehouse-datalist');
         const LINE_TABLE_COLSPAN = 9;
         const projectEl     = document.getElementById('project-id');
+        const projectListEl = document.getElementById('project-datalist');
         const fieldProject  = document.getElementById('field-project');
         const fieldWarehouse = document.getElementById('field-warehouse');
         const fieldStartDate = document.getElementById('field-start-date');
@@ -652,17 +652,78 @@
             }
         }
 
-        function renderProjectOptions(selectedProjectId = '') {
-            if (!projectEl) return;
-            const selectedKey = String(selectedProjectId ?? '').trim().toUpperCase();
-            const options = projectRows.map((row) => {
-                const pid = String(row.project_id ?? '').trim();
-                const name = String(row.name ?? '').trim();
-                const selectedAttr = pid.toUpperCase() === selectedKey ? ' selected' : '';
-                const label = name ? `${pid} (${name})` : pid;
-                return `<option value="${escapeHtml(pid)}"${selectedAttr}>${escapeHtml(label)}</option>`;
+        function filterRowsByQuery(rows, query, idKey, nameKey) {
+            const q = String(query ?? '').trim().toUpperCase();
+            if (!q) return rows;
+            return rows.filter((row) => {
+                const id = String(row[idKey] ?? '').trim().toUpperCase();
+                const name = String(row[nameKey] ?? '').trim().toUpperCase();
+                const label = name ? `${id} (${name})` : id;
+                return id.includes(q) || name.includes(q) || label.includes(q);
+            });
+        }
+
+        function buildSearchDatalistOptions(rows, idKey, nameKey) {
+            return rows.map((row) => {
+                const id = String(row[idKey] ?? '').trim();
+                const name = String(row[nameKey] ?? '').trim();
+                const label = name ? `${id} (${name})` : id;
+                return `<option value="${escapeHtml(id)}" label="${escapeHtml(label)}"></option>`;
             }).join('');
-            projectEl.innerHTML = `<option value="">— Select Project —</option>${options}`;
+        }
+
+        function resolveIdFromSearchInput(raw, rows, idKey, nameKey) {
+            const text = String(raw ?? '').trim();
+            if (!text) return '';
+            const key = text.toUpperCase();
+            const exact = rows.find((row) => String(row[idKey] ?? '').trim().toUpperCase() === key);
+            if (exact) return String(exact[idKey] ?? '').trim();
+            const byLabel = rows.find((row) => {
+                const id = String(row[idKey] ?? '').trim();
+                const name = String(row[nameKey] ?? '').trim();
+                const label = name ? `${id} (${name})` : id;
+                return label.toUpperCase() === key;
+            });
+            if (byLabel) return String(byLabel[idKey] ?? '').trim();
+            const token = text.split(/[\s(]/)[0].trim();
+            if (!token) return text;
+            const byToken = rows.find((row) => String(row[idKey] ?? '').trim().toUpperCase() === token.toUpperCase());
+            if (byToken) return String(byToken[idKey] ?? '').trim();
+            return token;
+        }
+
+        function resolveWarehouseId(raw) {
+            return resolveIdFromSearchInput(raw, warehouseRows, 'warehouse_id', 'warehouse_name');
+        }
+
+        function resolveProjectId(raw) {
+            return resolveIdFromSearchInput(raw, projectRows, 'project_id', 'name');
+        }
+
+        function isWarehouseInList(warehouseId) {
+            const key = String(warehouseId ?? '').trim().toUpperCase();
+            if (!key) return false;
+            return warehouseRows.some((w) => String(w.warehouse_id ?? '').trim().toUpperCase() === key);
+        }
+
+        function isProjectInList(projectId) {
+            const key = String(projectId ?? '').trim().toUpperCase();
+            if (!key) return false;
+            return projectRows.some((p) => String(p.project_id ?? '').trim().toUpperCase() === key);
+        }
+
+        function renderProjectOptions(selectedProjectId = null, filterQuery = '') {
+            if (!projectListEl) return;
+            const selectedKey = selectedProjectId !== null ? String(selectedProjectId).trim().toUpperCase() : '';
+            if (selectedKey && !projectRows.some((p) => String(p.project_id ?? '').trim().toUpperCase() === selectedKey)) {
+                const raw = String(selectedProjectId ?? '').trim();
+                projectRows.push({ project_id: raw, name: '(saved)' });
+            }
+            let rows = filterRowsByQuery(projectRows, filterQuery, 'project_id', 'name');
+            projectListEl.innerHTML = buildSearchDatalistOptions(rows, 'project_id', 'name');
+            if (selectedProjectId !== null && projectEl) {
+                projectEl.value = String(selectedProjectId).trim();
+            }
         }
 
         async function loadProjects(companyCode, selectedProjectId = '') {
@@ -685,23 +746,18 @@
             }
         }
 
-        function renderWarehouseOptions(selectedWarehouseId = '') {
-            if (!warehouseEl) return;
-            const selectedKey = String(selectedWarehouseId ?? '').trim().toUpperCase();
-            const options = warehouseRows.map((w) => {
-                const wid = String(w.warehouse_id ?? '').trim();
-                const name = String(w.warehouse_name ?? '').trim();
-                const label = name ? `${wid} (${name})` : wid;
-                const selectedAttr = wid.toUpperCase() === selectedKey ? ' selected' : '';
-                return `<option value="${escapeHtml(wid)}"${selectedAttr}>${escapeHtml(label)}</option>`;
-            }).join('');
-            const inList = warehouseRows.some((w) => String(w.warehouse_id ?? '').trim().toUpperCase() === selectedKey);
-            let orphan = '';
-            if (selectedKey && !inList) {
+        function renderWarehouseOptions(selectedWarehouseId = null, filterQuery = '') {
+            if (!warehouseListEl) return;
+            const selectedKey = selectedWarehouseId !== null ? String(selectedWarehouseId).trim().toUpperCase() : '';
+            if (selectedKey && !warehouseRows.some((w) => String(w.warehouse_id ?? '').trim().toUpperCase() === selectedKey)) {
                 const raw = String(selectedWarehouseId ?? '').trim();
-                orphan = `<option value="${escapeHtml(raw)}" selected>${escapeHtml(raw)} (saved)</option>`;
+                warehouseRows.push({ warehouse_id: raw, warehouse_name: '(saved)' });
             }
-            warehouseEl.innerHTML = `<option value="">— Select Warehouse —</option>${options}${orphan}`;
+            let rows = filterRowsByQuery(warehouseRows, filterQuery, 'warehouse_id', 'warehouse_name');
+            warehouseListEl.innerHTML = buildSearchDatalistOptions(rows, 'warehouse_id', 'warehouse_name');
+            if (selectedWarehouseId !== null && warehouseEl) {
+                warehouseEl.value = String(selectedWarehouseId).trim();
+            }
         }
 
         async function loadWarehouses(companyCode, selectedWarehouseId = '') {
@@ -762,7 +818,7 @@
             if (!poolNeedsBudgetResource()) {
                 return [];
             }
-            const projectId = String(projectEl?.value ?? '').trim().toUpperCase();
+            const projectId = resolveProjectId(projectEl?.value ?? '').toUpperCase();
             if (!projectId) {
                 return [];
             }
@@ -812,7 +868,7 @@
             }
             try {
                 const params = new URLSearchParams({ company_id: company });
-                const projectId = String(projectEl?.value ?? '').trim();
+                const projectId = resolveProjectId(projectEl?.value ?? '');
                 if (projectId) {
                     params.set('project_id', projectId);
                 }
@@ -939,7 +995,7 @@
                 unitSelect.innerHTML = '<option value="NOS" selected>NOS</option>';
                 unitSelect.value = 'NOS';
                 unitSelect.disabled = true;
-                unitNote.textContent = 'Unit fixed to NOS when category is used without an item ID for this pool.';
+                unitNote.textContent = '';
                 return;
             }
 
@@ -1477,13 +1533,29 @@
             }
         });
 
-        projectEl?.addEventListener('change', async () => {
+        async function onProjectFieldCommitted() {
+            const projectId = resolveProjectId(projectEl?.value ?? '');
+            if (projectEl && projectId) {
+                projectEl.value = projectId;
+            }
             if (!poolNeedsBudgetResource()) {
                 applyBudgetResourceUi();
                 return;
             }
             await loadBudgetResourceCodes(getCurrentCompanyCode());
+        }
+
+        projectEl?.addEventListener('change', () => { void onProjectFieldCommitted(); });
+        projectEl?.addEventListener('blur', () => { void onProjectFieldCommitted(); });
+        projectEl?.addEventListener('input', () => renderProjectOptions(null, projectEl.value));
+
+        warehouseEl?.addEventListener('blur', () => {
+            const warehouseId = resolveWarehouseId(warehouseEl?.value ?? '');
+            if (warehouseEl && warehouseId) {
+                warehouseEl.value = warehouseId;
+            }
         });
+        warehouseEl?.addEventListener('input', () => renderWarehouseOptions(null, warehouseEl.value));
 
         const attachZone = document.getElementById('attach-zone');
         attachZone.addEventListener('click', () => fileInput.click());
@@ -1665,13 +1737,27 @@
             const poolCfg = getSelectedPool();
             if (!poolCfg) { showStatus('Selected pool is not valid for this company.', 'error'); return; }
 
-            if (poolCfg.uses_warehouse && !warehouseEl.value.trim()) {
-                showStatus('Warehouse is required for this pool.', 'error');
-                return;
+            const warehouseId = resolveWarehouseId(warehouseEl?.value ?? '');
+            const projectId = resolveProjectId(projectEl?.value ?? '');
+            if (poolCfg.uses_warehouse) {
+                if (!warehouseId) {
+                    showStatus('Warehouse is required for this pool.', 'error');
+                    return;
+                }
+                if (warehouseRows.length && !isWarehouseInList(warehouseId)) {
+                    showStatus('Please select a valid warehouse from the search list.', 'error');
+                    return;
+                }
             }
-            if (poolCfg.uses_project && !(projectEl?.value ?? '').trim()) {
-                showStatus('Project is required for this pool.', 'error');
-                return;
+            if (poolCfg.uses_project) {
+                if (!projectId) {
+                    showStatus('Project is required for this pool.', 'error');
+                    return;
+                }
+                if (projectRows.length && !isProjectInList(projectId)) {
+                    showStatus('Please select a valid project from the search list.', 'error');
+                    return;
+                }
             }
             if (poolRequiresStartEndDate()) {
                 const startVal = (startDateEl?.value ?? '').trim();
@@ -1744,8 +1830,8 @@
                 company:      company,
                 buying_legal_entity: (buyingLegalEntityEl?.value || company),
                 pr_date:      prDateEl.value,
-                warehouse:    warehouseEl.value.trim(),
-                project_id:   (projectEl?.value ?? '').trim(),
+                warehouse:    warehouseId,
+                project_id:   projectId,
                 start_date:   poolRequiresStartEndDate() ? (startDateEl?.value ?? '') : null,
                 end_date:     poolRequiresStartEndDate() ? (endDateEl?.value ?? '') : null,
                 pool_id:      poolEl.value.trim(),
@@ -1817,8 +1903,8 @@
                 company: getCurrentCompanyCode() || null,
                 buying_legal_entity: (buyingLegalEntityEl?.value || getCurrentCompanyCode() || null),
                 pr_date: prDateEl.value || null,
-                warehouse: warehouseEl.value.trim() || null,
-                project_id: (projectEl?.value ?? '').trim() || null,
+                warehouse: resolveWarehouseId(warehouseEl?.value ?? '') || null,
+                project_id: resolveProjectId(projectEl?.value ?? '') || null,
                 start_date: poolRequiresStartEndDate() ? (startDateEl?.value || null) : null,
                 end_date: poolRequiresStartEndDate() ? (endDateEl?.value || null) : null,
                 pool_id: poolEl.value.trim() || null,
@@ -1915,8 +2001,10 @@
                 buyingLegalEntityEl.value = ['TM', 'PS'].includes(companyCode) ? companyCode : '';
             }
             prDateEl.value      = todayStr();
-            if (warehouseEl) warehouseEl.innerHTML = '<option value="">— Select Warehouse —</option>';
+            if (warehouseEl) warehouseEl.value = '';
+            if (warehouseListEl) warehouseListEl.innerHTML = '';
             if (projectEl) projectEl.value = '';
+            if (projectListEl) projectListEl.innerHTML = '';
             if (startDateEl) startDateEl.value = '';
             if (endDateEl) endDateEl.value = '';
             if (poolEl) {
