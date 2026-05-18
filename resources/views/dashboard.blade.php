@@ -6,83 +6,61 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @include('settings.rbac.partials.styles')
     <style>
-        .main {
+        body.dashboard-page {
+            background: #eef1f6;
+        }
+        .dashboard-page .main {
             flex: 1;
-            padding: 20px 24px 28px;
+            padding: 24px 28px 32px;
             overflow: auto;
             min-height: 100vh;
-            background:
-                radial-gradient(circle at 8% 12%, rgba(255, 197, 120, 0.12), transparent 36%),
-                radial-gradient(circle at 90% 8%, rgba(178, 227, 255, 0.12), transparent 34%),
-                linear-gradient(128deg, #162230 0%, #1f3448 46%, #294237 100%);
+            background: #eef1f6;
             position: relative;
         }
-        .main::before {
-            content: "";
-            position: fixed;
-            inset: 0 0 0 54px;
-            pointer-events: none;
-            background:
-                repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 32px),
-                repeating-linear-gradient(160deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 24px);
-            z-index: 0;
+        .dashboard-page .main::before {
+            display: none;
         }
         .dashboard-shell {
-            max-width: 1320px;
+            max-width: 1280px;
             margin: 0 auto;
-            position: relative;
-            z-index: 1;
         }
         .main-header {
-            margin-bottom: 14px;
+            margin-bottom: 20px;
             display: flex;
-            align-items: flex-start;
+            align-items: flex-end;
             justify-content: space-between;
             gap: 16px;
         }
         .main-header h2 {
             margin: 0;
-            font-size: 30px;
-            letter-spacing: 0.2px;
-            color: #fff;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #0f172a !important;
         }
         .main-subtitle {
-            margin-top: 2px;
-            color: rgba(255, 255, 255, 0.88);
-            font-size: 13px;
+            margin-top: 4px;
+            color: #64748b !important;
+            font-size: 14px;
         }
-        .info-card {
-            max-width: 480px;
-            padding: 20px;
-            background: #fff;
-            border-radius: 2px;
-            box-shadow: none;
-            border: 1px solid #edebe9;
+        .dashboard-panels {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 320px);
+            gap: 20px;
+            align-items: stretch;
         }
-        .info-card h3 {
-            margin: 0 0 12px;
-            font-size: 1rem;
-            color: #201f1e;
-        }
-        .info-card p { margin: 8px 0; font-size: 14px; color: #605e5c; }
         .company-hero {
-            margin-top: 16px;
-            max-width: none;
-            min-height: 460px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 0;
+            min-height: 0;
+            border-radius: 12px;
+            border: 1px solid #d8dee9;
             overflow: hidden;
             position: relative;
-            background:
-                radial-gradient(circle at 12% 20%, rgba(255, 197, 120, 0.15), transparent 46%),
-                radial-gradient(circle at 90% 18%, rgba(178, 227, 255, 0.13), transparent 42%),
-                linear-gradient(128deg, #1a2a3b 0%, #23445a 42%, #2e4a3f 100%);
-            box-shadow: 0 14px 30px rgba(16, 24, 40, 0.24);
-            z-index: 1;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
         }
         .company-hero.company-hero--custom-bg {
-            background: linear-gradient(128deg, #152028 0%, #1a2835 100%);
+            background: #fff;
         }
         .company-hero-bg {
             position: absolute;
@@ -93,83 +71,88 @@
             display: block;
             z-index: 0;
             user-select: none;
+            opacity: 0.14;
         }
         .company-hero-bg-scrim {
             position: absolute;
             inset: 0;
             z-index: 1;
             pointer-events: none;
-            background:
-                radial-gradient(circle at 12% 20%, rgba(255, 197, 120, 0.12), transparent 46%),
-                radial-gradient(circle at 90% 18%, rgba(178, 227, 255, 0.1), transparent 42%),
-                linear-gradient(128deg, rgba(26, 42, 59, 0.82) 0%, rgba(35, 68, 90, 0.78) 42%, rgba(46, 74, 63, 0.8) 100%);
+            background: linear-gradient(105deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 250, 252, 0.94) 55%, rgba(241, 245, 249, 0.9) 100%);
         }
         .company-hero::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            background:
-                repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 28px),
-                repeating-linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 20px);
-            pointer-events: none;
+            display: none;
         }
         .company-hero-content {
-            position: absolute;
-            inset: 0;
-            z-index: 3;
-            padding: 28px;
+            position: relative;
+            z-index: 2;
+            padding: 28px 32px;
             display: grid;
-            grid-template-columns: 1fr 360px;
+            grid-template-columns: 1fr 300px;
             align-items: center;
-            gap: 22px;
+            gap: 28px;
+            min-height: 380px;
         }
         .company-hero-top {
-            max-width: 640px;
+            max-width: 560px;
+            border-left: 4px solid #0f6cbd;
+            padding-left: 20px;
         }
         .company-hero-title {
             margin: 0;
-            color: #fff;
-            font-size: 42px;
+            color: #0f172a !important;
+            font-size: 32px;
             font-weight: 700;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            letter-spacing: -0.02em;
+            text-transform: none;
+            text-shadow: none;
+            line-height: 1.15;
         }
         .company-hero-meta {
             margin-top: 10px;
-            color: rgba(255, 255, 255, 0.96);
+            color: #475569 !important;
             font-size: 15px;
-            letter-spacing: 0.3px;
+        }
+        .company-hero-meta strong {
+            color: #0f172a;
+            font-weight: 600;
         }
         .company-hero-chip {
-            margin-top: 14px;
+            margin-top: 16px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 999px;
             font-size: 12px;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.16);
-            border: 1px solid rgba(255, 255, 255, 0.26);
+            font-weight: 600;
+            color: #0d5c2e;
+            background: #e8f6ee;
+            border: 1px solid #b7e4c7;
+        }
+        .company-hero-chip::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #107c10;
         }
         .company-hero-brand {
             width: 100%;
             padding: 12px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(3px);
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
         }
         .company-hero-brand img {
             width: 100%;
-            height: 170px;
+            height: 150px;
             object-fit: contain;
             display: block;
             border-radius: 8px;
             background: #fff;
-            padding: 8px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
         }
         .company-hero-brand-placeholder {
             min-height: 120px;
@@ -182,38 +165,53 @@
             text-align: center;
             font-size: 12px;
             line-height: 1.45;
-            color: rgba(255, 255, 255, 0.92);
+            color: #64748b;
             border-radius: 8px;
-            background: rgba(0, 0, 0, 0.2);
+            background: #fff;
+            border: 1px dashed #cbd5e1;
         }
         .company-hero-brand-placeholder strong {
-            color: #fff;
+            color: #334155;
             font-size: 11px;
             word-break: break-all;
         }
         .company-hero-brand-hint {
             display: block;
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.75);
+            color: #94a3b8;
         }
         .company-hero-user {
             width: 100%;
-            padding: 15px 16px;
+            padding: 16px 18px;
             border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            background: rgba(11, 22, 30, 0.45);
-            backdrop-filter: blur(2px);
-            color: #fff;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
         }
         .company-hero-user h3 {
-            margin: 0 0 8px;
-            font-size: 16px;
-            font-weight: 600;
+            margin: 0 0 12px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b !important;
         }
         .company-hero-user p {
-            margin: 4px 0;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.94);
+            margin: 0 0 10px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #334155 !important;
+        }
+        .company-hero-user p:last-child {
+            margin-bottom: 0;
+        }
+        .company-hero-user p strong {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #94a3b8;
+            margin-bottom: 2px;
         }
         .company-hero-right {
             display: flex;
@@ -222,59 +220,56 @@
             gap: 14px;
             width: 100%;
         }
-        .dashboard-panels {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-            gap: 16px;
-            align-items: start;
-        }
-        .dashboard-panels .company-hero {
-            margin-top: 0;
-            min-height: 420px;
-        }
         .dashboard-calendar {
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            background: rgba(11, 22, 30, 0.72);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 14px 30px rgba(16, 24, 40, 0.24);
-            padding: 16px 14px 14px;
-            color: #fff;
+            border-radius: 12px;
+            border: 1px solid #d8dee9;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+            padding: 18px 16px 16px;
+            color: #0f172a;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .dashboard-calendar-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
         }
         .dashboard-calendar-head h3,
         .dashboard-calendar #cal-month-label {
             margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
             text-align: center;
             flex: 1;
-            color: #fff !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            color: #0f172a !important;
+            text-shadow: none;
         }
         .calendar-nav-btn {
-            width: 32px;
-            height: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
+            width: 34px;
+            height: 34px;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: #fff;
+            color: #334155;
             font-size: 18px;
             line-height: 1;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: background .15s, border-color .15s;
         }
         .calendar-nav-btn:hover {
-            background: rgba(255, 255, 255, 0.18);
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            color: #0f172a;
         }
         .calendar-weekdays,
         .calendar-days {
@@ -283,95 +278,109 @@
             gap: 4px;
         }
         .calendar-weekdays {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         .calendar-weekdays span {
             text-align: center;
             font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.72);
+            font-weight: 700;
+            color: #64748b;
             padding: 2px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
         .calendar-day {
             aspect-ratio: 1;
             border: 0;
             border-radius: 8px;
             background: transparent;
-            color: rgba(255, 255, 255, 0.92);
+            color: #1e293b;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             font-family: inherit;
         }
         .calendar-day:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.14);
+            background: #e8f4fc;
+            color: #0f6cbd;
         }
         .calendar-day.is-outside {
-            color: rgba(255, 255, 255, 0.38);
+            color: #94a3b8;
         }
         .calendar-day.is-today {
-            background: #106ebe;
+            background: #0f6cbd;
             color: #fff;
             font-weight: 700;
         }
         .calendar-day.is-selected:not(.is-today) {
-            background: rgba(255, 255, 255, 0.22);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: #deecf9;
+            color: #005a9e;
+            box-shadow: inset 0 0 0 1px #0f6cbd;
         }
         .calendar-day:disabled {
             cursor: default;
             visibility: hidden;
         }
         .calendar-footer {
-            margin-top: 10px;
+            margin-top: auto;
+            padding-top: 12px;
             display: flex;
             justify-content: center;
         }
         .calendar-today-btn {
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            color: #fff;
+            border: 1px solid #0f6cbd;
+            border-radius: 8px;
+            background: #fff;
+            color: #0f6cbd;
             font-size: 12px;
             font-weight: 600;
-            padding: 5px 12px;
+            padding: 7px 16px;
             cursor: pointer;
             font-family: inherit;
+            transition: background .15s, color .15s;
         }
         .calendar-today-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: #0f6cbd;
+            color: #fff;
         }
-        @media (max-width: 1024px) {
-            .main::before {
-                inset: 0;
-            }
+        .dashboard-warning {
+            max-width: 520px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: #fff8e6;
+            border: 1px solid #e8d9a8;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #7a5c00;
         }
         @media (max-width: 1100px) {
             .dashboard-panels {
                 grid-template-columns: 1fr;
             }
-            .dashboard-panels .company-hero {
-                min-height: 460px;
+            .dashboard-calendar {
+                max-width: 360px;
             }
         }
         @media (max-width: 860px) {
             .company-hero-content {
                 grid-template-columns: 1fr;
                 align-items: start;
+                min-height: 0;
+                padding: 22px 20px;
             }
             .company-hero-title {
-                font-size: 34px;
+                font-size: 26px;
             }
             .company-hero-right {
-                max-width: 420px;
+                max-width: none;
             }
-            .company-hero-user {
-                width: 100%;
+            .dashboard-calendar {
+                max-width: none;
             }
         }
     </style>
 </head>
-<body>
+<body class="dashboard-page">
     @include('partials.global-company-selector')
     @php
         $companyCode = strtoupper((string) ($currentCompanyCode ?? $globalSelectedCompany ?? request()->query('company', '')));
@@ -393,7 +402,7 @@
         </div>
 
         @if (session('warning'))
-            <div style="max-width:520px;padding:10px 14px;margin-bottom:16px;background:#fff4ce;border:1px solid #e0d0a0;border-radius:2px;font-size:13px;color:#8a6d3b;">
+            <div class="dashboard-warning">
                 {{ session('warning') }}
             </div>
         @endif
@@ -466,9 +475,9 @@
 
                     <div class="company-hero-user">
                         <h3>User Details</h3>
-                        <p><strong>Name:</strong> {{ auth()->user()->name }}</p>
-                        <p><strong>Email:</strong> {{ auth()->user()->email }}</p>
-                        <p><strong>User ID:</strong> {{ auth()->user()->id }}</p>
+                        <p><strong>Name</strong>{{ auth()->user()->name }}</p>
+                        <p><strong>Email</strong>{{ auth()->user()->email }}</p>
+                        <p><strong>User ID</strong>{{ auth()->user()->id }}</p>
                     </div>
                 </div>
             </div>
