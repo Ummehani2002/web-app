@@ -4,6 +4,7 @@ use App\Http\Controllers\GrnController;
 use App\Http\Controllers\ItemIssueController;
 use App\Http\Controllers\PurchaseRequisitionController;
 use App\Http\Controllers\PurchReqController;
+use App\Http\Controllers\QuotationsController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Project Management ───────────────────────────────────────────────────────
@@ -21,6 +22,11 @@ Route::middleware(['auth', 'permission:menu:modules.project-management.item-issu
         Route::get('/journals/{journal}',    [ItemIssueController::class, 'showJournal'])->name('modules.project-management.item-issue.api.journals.show');
         Route::delete('/journals/{journal}', [ItemIssueController::class, 'destroyJournal'])->name('modules.project-management.item-issue.api.journals.destroy');
     });
+});
+
+Route::middleware(['auth', 'permission:menu:modules.project-management.quotations'])->group(function () {
+    Route::get('/modules/project-management/quotations', [QuotationsController::class, 'index'])
+        ->name('modules.project-management.quotations');
 });
 
 // ─── Procurement – Purchase Requisition ──────────────────────────────────────

@@ -39,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('authCanAccessMasters', false);
                 $view->with('authShowMastersSettingsNav', false);
                 $view->with('canItemIssue', false);
+                $view->with('canQuotations', false);
                 $view->with('canPr', false);
                 $view->with('canGrn', false);
                 $view->with('canModulesGeneral', false);
@@ -59,9 +60,10 @@ class AppServiceProvider extends ServiceProvider
 
             $canAccessMasters = $user->canAccessMasters();
             $canItemIssue = (bool) ($menuVisibility['modules.project-management.item-issue'] ?? false);
+            $canQuotations = (bool) ($menuVisibility['modules.project-management.quotations'] ?? false);
             $canPr = (bool) ($menuVisibility['modules.procurement.purch-req'] ?? false);
             $canGrn = (bool) ($menuVisibility['modules.procurement.grn'] ?? false);
-            $canModulesGeneral = $canItemIssue || $canPr || $canGrn;
+            $canModulesGeneral = $canItemIssue || $canQuotations || $canPr || $canGrn;
 
             $view->with('globalCompanyOptions', $companies);
             $view->with('globalSelectedCompany', $selectedCompany);
@@ -69,6 +71,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('authCanAccessMasters', $canAccessMasters);
             $view->with('authShowMastersSettingsNav', $canAccessMasters);
             $view->with('canItemIssue', $canItemIssue);
+            $view->with('canQuotations', $canQuotations);
             $view->with('canPr', $canPr);
             $view->with('canGrn', $canGrn);
             $view->with('canModulesGeneral', $canModulesGeneral);

@@ -31,7 +31,7 @@
         ['label' => 'Department Managers', 'route' => 'masters.department-managers.index', 'pattern' => 'masters.department-managers.index'],
     ];
 
-    $showProjectManagement = ($authIsSuperAdmin ?? false) || ($canItemIssue ?? false);
+    $showProjectManagement = ($authIsSuperAdmin ?? false) || ($canItemIssue ?? false) || ($canQuotations ?? false);
     $showProcurement = ($authIsSuperAdmin ?? false) || ($canPr ?? false) || ($canGrn ?? false);
 
     // Expand the subgroup that contains the active route so sub-modules stay visible (e.g. PR under Procurement).
@@ -123,6 +123,12 @@
                                         class="nav-link nested {{ request()->routeIs('modules.project-management.item-issue*') ? 'active' : '' }}"
                                         href="{{ route('modules.project-management.item-issue', $companyQuery ?? []) }}"
                                     >Item Issue</a>
+                                @endif
+                                @if(($authIsSuperAdmin ?? false) || ($canQuotations ?? false))
+                                    <a
+                                        class="nav-link nested {{ request()->routeIs('modules.project-management.quotations*') ? 'active' : '' }}"
+                                        href="{{ route('modules.project-management.quotations', $companyQuery ?? []) }}"
+                                    >Quotations</a>
                                 @endif
                             </div>
                         </div>

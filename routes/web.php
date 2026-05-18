@@ -19,7 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', fn () => redirect()->route('dashboard'));
 
     // Placeholder module routes (coming soon)
-    Route::get('/quotations',      fn () => 'Quotation Module - Coming Soon')->name('quotations.index');
+    Route::redirect('/quotations', '/modules/project-management/quotations')->name('quotations.index');
     Route::get('/purchase-orders', fn () => 'Purchase Order Module - Coming Soon')->name('purchase-orders.index');
     Route::get('/inventory',       fn () => 'Inventory Module - Coming Soon')->name('inventory.index');
     Route::get('/vendors',         fn () => 'Vendors Module - Coming Soon')->name('vendors.index');

@@ -69,22 +69,25 @@
         .status-box.error   { display: block; background: #fde7e9; color: #a4262c; }
         .section-title { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .lines-wrap { border: 1px solid #edebe9; border-radius: 2px; overflow: auto; margin-bottom: 14px; }
-        /* Do not stretch line table on wide monitors — keeps laptop-style spacing (no huge gaps). */
+        /* Full-width table; description column grows so desktop has no empty strip on the right. */
         #lines-table {
-            width: max-content;
-            max-width: 100%;
+            width: 100%;
             table-layout: auto;
         }
-        #lines-table th,
-        #lines-table tbody tr[data-line] > td {
-            width: auto;
+        #lines-table thead th:not([data-col="description"]),
+        #lines-table tbody tr[data-line] > td:not([data-col="description"]) {
+            width: 1%;
             white-space: nowrap;
+        }
+        #lines-table thead th[data-col="description"],
+        #lines-table tbody tr[data-line] > td[data-col="description"] {
+            width: auto;
         }
         #lines-table tbody tr[data-line] > td:has(.unit-note) {
             white-space: normal;
         }
         .line-input { width: 90px; border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; }
-        .line-input.wide { width: 320px; }
+        .line-input.wide { width: 100%; min-width: 200px; max-width: none; box-sizing: border-box; }
         .line-input.item-id { width: 180px; min-width: 180px; }
         .line-input.req-date { width: 140px; min-width: 140px; }
         .line-input.narrow { width: 60px; }
@@ -302,11 +305,11 @@
                                     <th style="width:50px;">Line</th>
                                     <th data-col="category">Item Category</th>
                                     <th data-col="item-id">Item ID</th>
-                                    <th>Description</th>
-                                    <th>Required Date</th>
-                                    <th>Unit</th>
-                                    <th>Qty</th>
-                                    <th>Action</th>
+                                    <th data-col="description">Description</th>
+                                    <th data-col="req-date">Required Date</th>
+                                    <th data-col="unit">Unit</th>
+                                    <th data-col="qty">Qty</th>
+                                    <th data-col="action">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="lines-body">
@@ -1190,16 +1193,16 @@
                     <input class="line-input item-id lf-item-id" type="text" list="lf-item-id-list-${lineId}" placeholder="Type Item ID to search">
                     <datalist id="lf-item-id-list-${lineId}" class="lf-item-id-list"></datalist>
                 </td>
-                <td><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
-                <td><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
-                <td>
+                <td data-col="description"><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
+                <td data-col="req-date"><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
+                <td data-col="unit">
                     <select class="line-select unit-select lf-unit">
                         <option value="${line.unit ?? ''}">${line.unit ? line.unit : 'Select item first'}</option>
                     </select>
                     <div class="unit-note lf-unit-note"></div>
                 </td>
-                <td><input class="line-input narrow lf-qty" type="number" min="0.001" step="any" value="${line.qty ?? 1}"></td>
-                <td>
+                <td data-col="qty"><input class="line-input narrow lf-qty" type="number" min="0.001" step="any" value="${line.qty ?? 1}"></td>
+                <td data-col="action">
                     <button class="icon-btn-danger remove-line" type="button" title="Delete line" aria-label="Delete line">
                         🗑
                     </button>
