@@ -69,6 +69,20 @@
         .status-box.error   { display: block; background: #fde7e9; color: #a4262c; }
         .section-title { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .lines-wrap { border: 1px solid #edebe9; border-radius: 2px; overflow: auto; margin-bottom: 14px; }
+        /* Do not stretch line table on wide monitors — keeps laptop-style spacing (no huge gaps). */
+        #lines-table {
+            width: max-content;
+            max-width: 100%;
+            table-layout: auto;
+        }
+        #lines-table th,
+        #lines-table tbody tr[data-line] > td {
+            width: auto;
+            white-space: nowrap;
+        }
+        #lines-table tbody tr[data-line] > td:has(.unit-note) {
+            white-space: normal;
+        }
         .line-input { width: 90px; border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; }
         .line-input.wide { width: 320px; }
         .line-input.item-id { width: 180px; min-width: 180px; }
