@@ -1008,9 +1008,7 @@
             const itemId = tr.querySelector('.lf-item-id')?.value?.trim() ?? '';
             if (!itemId) {
                 unitSelect.innerHTML = '<option value="">Optional until item is selected</option>';
-                unitNote.textContent = isItemIdOnlyPool(p)
-                    ? 'Units load from D365 after Item ID is selected (e.g. NOS, EA).'
-                    : '';
+                unitNote.textContent = '';
             } else {
                 void loadUnitsForRow(tr);
             }
