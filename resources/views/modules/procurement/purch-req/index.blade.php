@@ -21,18 +21,10 @@
         .btn-sm { padding: 4px 10px; font-size: 11px; }
         .btn:disabled { border-color: #edebe9; background: #f3f2f1; color: #a19f9d; cursor: not-allowed; }
         .hidden { display: none !important; }
-        /* Hiding pool columns: visibility:collapse keeps #lines-table header + body columns aligned. */
+        /* Hidden pool columns must not reserve horizontal space (avoids gap before Description). */
         #lines-table thead th.line-col-collapsed,
         #lines-table tbody tr[data-line] > td.line-col-collapsed {
-            visibility: collapse;
-            width: 0;
-            min-width: 0;
-            max-width: 0;
-            padding: 0;
-            border: none;
-            overflow: hidden;
-            font-size: 0;
-            line-height: 0;
+            display: none !important;
         }
         .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; }
         .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; font-size: 20px; font-weight: 600; }
@@ -77,9 +69,8 @@
             margin-bottom: 14px;
         }
         #lines-table {
-            table-layout: fixed;
+            table-layout: auto;
             width: 100%;
-            min-width: 860px;
         }
         #lines-table thead th,
         #lines-table tbody tr[data-line] > td {
@@ -92,15 +83,21 @@
             font-size: 12px;
             white-space: nowrap;
         }
-        #lines-table thead th:nth-child(1) { width: 30px; }
-        #lines-table thead th:nth-child(2) { width: 40px; }
-        #lines-table thead th[data-col="category"] { width: 13%; }
-        #lines-table thead th[data-col="item-id"] { width: 14%; }
-        #lines-table thead th[data-col="desc"] { width: 32%; }
-        #lines-table thead th[data-col="req-date"] { width: 118px; }
-        #lines-table thead th[data-col="unit"] { width: 100px; }
-        #lines-table thead th[data-col="qty"] { width: 72px; }
-        #lines-table thead th[data-col="action"] { width: 44px; }
+        #lines-table thead th:nth-child(1) { width: 32px; }
+        #lines-table thead th:nth-child(2) { width: 44px; }
+        #lines-table thead th[data-col="category"] { width: 14%; min-width: 130px; }
+        #lines-table thead th[data-col="item-id"] { width: 16%; min-width: 150px; }
+        #lines-table thead th[data-col="desc"] { width: auto; min-width: 220px; }
+        #lines-table thead th[data-col="req-date"] { width: 132px; }
+        #lines-table thead th[data-col="unit"] { width: 110px; }
+        #lines-table thead th[data-col="qty"] { width: 68px; }
+        #lines-table thead th[data-col="action"] { width: 48px; }
+        #lines-table.lines-no-item-id thead th[data-col="desc"] { width: 42%; }
+        #lines-table.lines-no-category thead th[data-col="desc"] { width: 48%; }
+        #lines-table.lines-no-item-id.lines-no-category thead th[data-col="desc"] { width: 55%; }
+        #lines-table tbody tr[data-line] > td[data-col="unit"] {
+            vertical-align: top;
+        }
         #lines-table .line-input,
         #lines-table .line-select {
             width: 100%;
@@ -996,6 +993,7 @@
         }
 
         function applyPoolLineColumns(p) {
+            const linesTable = document.getElementById('lines-table');
             let showCat = true;
             let showItem = true;
             if (p != null) {
@@ -1008,6 +1006,10 @@
             document.querySelectorAll('#lines-table [data-col="item-id"]').forEach((el) => {
                 el.classList.toggle('line-col-collapsed', !showItem);
             });
+            if (linesTable) {
+                linesTable.classList.toggle('lines-no-category', !showCat);
+                linesTable.classList.toggle('lines-no-item-id', !showItem);
+            }
         }
 
         function applyPoolUi() {
