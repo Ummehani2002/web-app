@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Purchase Requisition</title>
     <style>
@@ -48,7 +49,15 @@
             .form-header-right { margin-right: 20px; }
         }
         .form-title { margin: 0; font-size: 22px; font-weight: 600; }
-        .fields { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+        .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; margin-bottom: 14px; }
+        @media (max-width: 1100px) {
+            .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 640px) {
+            .fields { grid-template-columns: 1fr; }
+            .form-header { flex-direction: column; align-items: stretch; }
+            .form-header-right { flex-wrap: wrap; }
+        }
         .field label { display: block; font-size: 12px; margin-bottom: 4px; color: #605e5c; font-weight: 500; }
         .field input, .field select, .field textarea { width: 100%; border: 1px solid #8a8886; border-radius: 2px; padding: 6px 8px; font-size: 13px; background: #fff; font-family: inherit; }
         .field textarea { resize: vertical; min-height: 60px; }
@@ -59,15 +68,60 @@
         .status-box.success { display: block; background: #e8f6ee; color: #1f7a48; }
         .status-box.error   { display: block; background: #fde7e9; color: #a4262c; }
         .section-title { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .lines-wrap { border: 1px solid #edebe9; border-radius: 2px; overflow: auto; margin-bottom: 14px; }
-        .line-input { width: 90px; border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; }
-        .line-input.wide { width: 320px; }
-        .line-input.item-id { width: 180px; min-width: 180px; }
-        .line-input.req-date { width: 140px; min-width: 140px; }
-        .line-input.narrow { width: 60px; }
-        .line-select { width: 140px; border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; background: #fff; }
-        .unit-select { width: 150px; min-width: 150px; }
-        .unit-note { font-size: 10px; color: #8a8886; margin-top: 2px; }
+        .lines-wrap {
+            border: 1px solid #edebe9;
+            border-radius: 2px;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 14px;
+        }
+        #lines-table {
+            table-layout: fixed;
+            width: 100%;
+            min-width: 860px;
+        }
+        #lines-table thead th,
+        #lines-table tbody tr[data-line] > td {
+            padding: 6px 8px;
+            vertical-align: middle;
+        }
+        #lines-table thead th {
+            background: #faf9f8;
+            color: #605e5c;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        #lines-table thead th:nth-child(1) { width: 30px; }
+        #lines-table thead th:nth-child(2) { width: 40px; }
+        #lines-table thead th[data-col="category"] { width: 13%; }
+        #lines-table thead th[data-col="item-id"] { width: 14%; }
+        #lines-table thead th[data-col="desc"] { width: 32%; }
+        #lines-table thead th[data-col="req-date"] { width: 118px; }
+        #lines-table thead th[data-col="unit"] { width: 100px; }
+        #lines-table thead th[data-col="qty"] { width: 72px; }
+        #lines-table thead th[data-col="action"] { width: 44px; }
+        #lines-table .line-input,
+        #lines-table .line-select {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            display: block;
+        }
+        .line-input { border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; }
+        .line-input.wide,
+        .line-input.item-id,
+        .line-input.req-date,
+        .line-input.narrow { width: 100%; min-width: 0; }
+        .line-select { border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; background: #fff; }
+        .unit-select { width: 100%; min-width: 0; }
+        .unit-note { font-size: 10px; color: #8a8886; margin-top: 2px; line-height: 1.2; }
+        #lines-table tbody tr[data-line] > td[data-col="action"] {
+            text-align: center;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
         .line-toggle-btn {
             border: 0;
             background: transparent;
@@ -277,15 +331,15 @@
                         <table id="lines-table">
                             <thead>
                                 <tr>
-                                    <th style="width:28px;"></th>
-                                    <th style="width:50px;">Line</th>
+                                    <th></th>
+                                    <th>Line</th>
                                     <th data-col="category">Item Category</th>
                                     <th data-col="item-id">Item ID</th>
-                                    <th>Description</th>
-                                    <th>Required Date</th>
-                                    <th>Unit</th>
-                                    <th>Qty</th>
-                                    <th>Action</th>
+                                    <th data-col="desc">Description</th>
+                                    <th data-col="req-date">Required Date</th>
+                                    <th data-col="unit">Unit</th>
+                                    <th data-col="qty">Qty</th>
+                                    <th data-col="action">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="lines-body">
@@ -1081,6 +1135,10 @@
                 if (serialEl) {
                     serialEl.textContent = String(lineNo);
                 }
+                const lineNoCell = row.querySelector('td[data-col="line-no"]');
+                if (lineNoCell) {
+                    lineNoCell.dataset.lineNum = String(lineNo);
+                }
 
                 const details = getLineDetailsRow(row.dataset.line);
                 const titleEl = details?.querySelector('.line-details-title');
@@ -1103,27 +1161,27 @@
             const row = document.createElement('tr');
             row.dataset.line = lineId;
             row.innerHTML = `
-                <td style="text-align:center;">
+                <td data-col="toggle" style="text-align:center;">
                     <button type="button" class="line-toggle-btn toggle-line" data-line="${lineId}" aria-expanded="false" title="Expand details">
                         <span class="chev"></span>
                     </button>
                 </td>
-                <td style="text-align:center;"><span class="line-serial"></span></td>
-                <td data-col="category"><select class="line-select lf-category">${catOptions}</select></td>
-                <td data-col="item-id">
+                <td data-col="line-no" data-line-num="" style="text-align:center;"><span class="line-serial"></span></td>
+                <td data-col="category" data-label="Item Category"><select class="line-select lf-category">${catOptions}</select></td>
+                <td data-col="item-id" data-label="Item ID">
                     <input class="line-input item-id lf-item-id" type="text" list="lf-item-id-list-${lineId}" placeholder="Type Item ID to search">
                     <datalist id="lf-item-id-list-${lineId}" class="lf-item-id-list"></datalist>
                 </td>
-                <td><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
-                <td><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
-                <td>
+                <td data-col="desc" data-label="Description"><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
+                <td data-col="req-date" data-label="Required Date"><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
+                <td data-col="unit" data-label="Unit">
                     <select class="line-select unit-select lf-unit">
                         <option value="${line.unit ?? ''}">${line.unit ? line.unit : 'Select item first'}</option>
                     </select>
                     <div class="unit-note lf-unit-note"></div>
                 </td>
-                <td><input class="line-input narrow lf-qty" type="number" min="0.001" step="any" value="${line.qty ?? 1}"></td>
-                <td>
+                <td data-col="qty" data-label="Qty"><input class="line-input narrow lf-qty" type="number" min="0.001" step="any" value="${line.qty ?? 1}"></td>
+                <td data-col="action">
                     <button class="icon-btn-danger remove-line" type="button" title="Delete line" aria-label="Delete line">
                         🗑
                     </button>
