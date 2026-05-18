@@ -21,10 +21,18 @@
         .btn-sm { padding: 4px 10px; font-size: 11px; }
         .btn:disabled { border-color: #edebe9; background: #f3f2f1; color: #a19f9d; cursor: not-allowed; }
         .hidden { display: none !important; }
-        /* Hidden pool columns must not reserve horizontal space (avoids gap before Description). */
+        /* Hiding pool columns: visibility:collapse keeps #lines-table header + body columns aligned. */
         #lines-table thead th.line-col-collapsed,
         #lines-table tbody tr[data-line] > td.line-col-collapsed {
-            display: none !important;
+            visibility: collapse;
+            width: 0;
+            min-width: 0;
+            max-width: 0;
+            padding: 0;
+            border: none;
+            overflow: hidden;
+            font-size: 0;
+            line-height: 0;
         }
         .card { background: #fff; border: 1px solid #edebe9; border-radius: 2px; }
         .card-head { padding: 12px 14px; border-bottom: 1px solid #edebe9; font-size: 20px; font-weight: 600; }
@@ -60,65 +68,15 @@
         .status-box.success { display: block; background: #e8f6ee; color: #1f7a48; }
         .status-box.error   { display: block; background: #fde7e9; color: #a4262c; }
         .section-title { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .lines-wrap {
-            border: 1px solid #edebe9;
-            border-radius: 2px;
-            overflow-x: auto;
-            overflow-y: visible;
-            -webkit-overflow-scrolling: touch;
-            margin-bottom: 14px;
-        }
-        #lines-table {
-            table-layout: auto;
-            width: 100%;
-        }
-        #lines-table thead th,
-        #lines-table tbody tr[data-line] > td {
-            padding: 6px 8px;
-            vertical-align: middle;
-        }
-        #lines-table thead th {
-            background: #faf9f8;
-            color: #605e5c;
-            font-size: 12px;
-            white-space: nowrap;
-        }
-        #lines-table thead th:nth-child(1) { width: 32px; }
-        #lines-table thead th:nth-child(2) { width: 44px; }
-        #lines-table thead th[data-col="category"] { width: 14%; min-width: 130px; }
-        #lines-table thead th[data-col="item-id"] { width: 16%; min-width: 150px; }
-        #lines-table thead th[data-col="desc"] { width: auto; min-width: 220px; }
-        #lines-table thead th[data-col="req-date"] { width: 132px; }
-        #lines-table thead th[data-col="unit"] { width: 110px; }
-        #lines-table thead th[data-col="qty"] { width: 68px; }
-        #lines-table thead th[data-col="action"] { width: 48px; }
-        #lines-table.lines-no-item-id thead th[data-col="desc"] { width: 42%; }
-        #lines-table.lines-no-category thead th[data-col="desc"] { width: 48%; }
-        #lines-table.lines-no-item-id.lines-no-category thead th[data-col="desc"] { width: 55%; }
-        #lines-table tbody tr[data-line] > td[data-col="unit"] {
-            vertical-align: top;
-        }
-        #lines-table .line-input,
-        #lines-table .line-select {
-            width: 100%;
-            max-width: 100%;
-            min-width: 0;
-            box-sizing: border-box;
-            display: block;
-        }
-        .line-input { border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; }
-        .line-input.wide,
-        .line-input.item-id,
-        .line-input.req-date,
-        .line-input.narrow { width: 100%; min-width: 0; }
-        .line-select { border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; background: #fff; }
-        .unit-select { width: 100%; min-width: 0; }
-        .unit-note { font-size: 10px; color: #8a8886; margin-top: 2px; line-height: 1.2; }
-        #lines-table tbody tr[data-line] > td[data-col="action"] {
-            text-align: center;
-            padding-left: 4px;
-            padding-right: 4px;
-        }
+        .lines-wrap { border: 1px solid #edebe9; border-radius: 2px; overflow: auto; margin-bottom: 14px; }
+        .line-input { width: 90px; border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; }
+        .line-input.wide { width: 320px; }
+        .line-input.item-id { width: 180px; min-width: 180px; }
+        .line-input.req-date { width: 140px; min-width: 140px; }
+        .line-input.narrow { width: 60px; }
+        .line-select { width: 140px; border: 1px solid #8a8886; border-radius: 2px; padding: 4px 6px; font-size: 12px; background: #fff; }
+        .unit-select { width: 150px; min-width: 150px; }
+        .unit-note { font-size: 10px; color: #8a8886; margin-top: 2px; }
         .line-toggle-btn {
             border: 0;
             background: transparent;
@@ -328,15 +286,15 @@
                         <table id="lines-table">
                             <thead>
                                 <tr>
-                                    <th></th>
-                                    <th>Line</th>
+                                    <th style="width:28px;"></th>
+                                    <th style="width:50px;">Line</th>
                                     <th data-col="category">Item Category</th>
                                     <th data-col="item-id">Item ID</th>
-                                    <th data-col="desc">Description</th>
-                                    <th data-col="req-date">Required Date</th>
-                                    <th data-col="unit">Unit</th>
-                                    <th data-col="qty">Qty</th>
-                                    <th data-col="action">Action</th>
+                                    <th>Description</th>
+                                    <th>Required Date</th>
+                                    <th>Unit</th>
+                                    <th>Qty</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="lines-body">
@@ -993,7 +951,6 @@
         }
 
         function applyPoolLineColumns(p) {
-            const linesTable = document.getElementById('lines-table');
             let showCat = true;
             let showItem = true;
             if (p != null) {
@@ -1006,10 +963,6 @@
             document.querySelectorAll('#lines-table [data-col="item-id"]').forEach((el) => {
                 el.classList.toggle('line-col-collapsed', !showItem);
             });
-            if (linesTable) {
-                linesTable.classList.toggle('lines-no-category', !showCat);
-                linesTable.classList.toggle('lines-no-item-id', !showItem);
-            }
         }
 
         function applyPoolUi() {
@@ -1137,11 +1090,6 @@
                 if (serialEl) {
                     serialEl.textContent = String(lineNo);
                 }
-                const lineNoCell = row.querySelector('td[data-col="line-no"]');
-                if (lineNoCell) {
-                    lineNoCell.dataset.lineNum = String(lineNo);
-                }
-
                 const details = getLineDetailsRow(row.dataset.line);
                 const titleEl = details?.querySelector('.line-details-title');
                 if (titleEl) {
@@ -1163,27 +1111,27 @@
             const row = document.createElement('tr');
             row.dataset.line = lineId;
             row.innerHTML = `
-                <td data-col="toggle" style="text-align:center;">
+                <td style="text-align:center;">
                     <button type="button" class="line-toggle-btn toggle-line" data-line="${lineId}" aria-expanded="false" title="Expand details">
                         <span class="chev"></span>
                     </button>
                 </td>
-                <td data-col="line-no" data-line-num="" style="text-align:center;"><span class="line-serial"></span></td>
-                <td data-col="category" data-label="Item Category"><select class="line-select lf-category">${catOptions}</select></td>
-                <td data-col="item-id" data-label="Item ID">
+                <td style="text-align:center;"><span class="line-serial"></span></td>
+                <td data-col="category"><select class="line-select lf-category">${catOptions}</select></td>
+                <td data-col="item-id">
                     <input class="line-input item-id lf-item-id" type="text" list="lf-item-id-list-${lineId}" placeholder="Type Item ID to search">
                     <datalist id="lf-item-id-list-${lineId}" class="lf-item-id-list"></datalist>
                 </td>
-                <td data-col="desc" data-label="Description"><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
-                <td data-col="req-date" data-label="Required Date"><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
-                <td data-col="unit" data-label="Unit">
+                <td><input class="line-input wide lf-desc" type="text" maxlength="255" placeholder="Description (up to 255 characters)" value="${line.item_description ?? ''}"></td>
+                <td><input class="line-input req-date lf-req-date" type="date" value="${line.required_date ?? todayStr()}"></td>
+                <td>
                     <select class="line-select unit-select lf-unit">
                         <option value="${line.unit ?? ''}">${line.unit ? line.unit : 'Select item first'}</option>
                     </select>
                     <div class="unit-note lf-unit-note"></div>
                 </td>
-                <td data-col="qty" data-label="Qty"><input class="line-input narrow lf-qty" type="number" min="0.001" step="any" value="${line.qty ?? 1}"></td>
-                <td data-col="action">
+                <td><input class="line-input narrow lf-qty" type="number" min="0.001" step="any" value="${line.qty ?? 1}"></td>
+                <td>
                     <button class="icon-btn-danger remove-line" type="button" title="Delete line" aria-label="Delete line">
                         🗑
                     </button>
