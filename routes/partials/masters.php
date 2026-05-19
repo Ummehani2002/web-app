@@ -23,6 +23,7 @@ use App\Http\Controllers\ProjectMasterController;
 use App\Http\Controllers\SalesTaxGroupMasterController;
 use App\Http\Controllers\SiteMasterController;
 use App\Http\Controllers\SizeMasterController;
+use App\Http\Controllers\CustomerMasterController;
 use App\Http\Controllers\WarehouseMasterController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +56,10 @@ Route::middleware(['auth', 'super_admin'])->group(function () {
     Route::get('/masters/warehouses', [WarehouseMasterController::class, 'index'])->name('masters.warehouses.index');
     Route::post('/masters/warehouses', [WarehouseMasterController::class, 'store'])->name('masters.warehouses.store');
     Route::delete('/masters/warehouses/{warehouse}', [WarehouseMasterController::class, 'destroy'])->name('masters.warehouses.destroy');
+
+    Route::get('/masters/customers', [CustomerMasterController::class, 'index'])->name('masters.customers.index');
+    Route::post('/masters/customers', [CustomerMasterController::class, 'store'])->name('masters.customers.store');
+    Route::delete('/masters/customers/{customer}', [CustomerMasterController::class, 'destroy'])->name('masters.customers.destroy');
 
     Route::get('/masters/fd-locations', [FdLocationMasterController::class, 'index'])->name('masters.fd-locations.index');
     Route::post('/masters/fd-locations', [FdLocationMasterController::class, 'store'])->name('masters.fd-locations.store');

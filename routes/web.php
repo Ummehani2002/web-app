@@ -23,7 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/purchase-orders', fn () => 'Purchase Order Module - Coming Soon')->name('purchase-orders.index');
     Route::get('/inventory',       fn () => 'Inventory Module - Coming Soon')->name('inventory.index');
     Route::get('/vendors',         fn () => 'Vendors Module - Coming Soon')->name('vendors.index');
-    Route::get('/customers',       fn () => 'Customers Module - Coming Soon')->name('customers.index');
+    Route::redirect('/customers', '/masters/customers')->name('customers.index');
     Route::get('/reports',         fn () => 'Reports Module - Coming Soon')->name('reports.index');
 });
 

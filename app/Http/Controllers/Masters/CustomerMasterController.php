@@ -1,18 +1,46 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Masters;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Masters\CustomerMasterController;
 use App\Models\Customer;
 use App\Support\DataAreaId;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
-class CustomerController extends Controller
+class CustomerMasterController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public const TYPES = ['Individual', 'Corporate', 'Government', 'Other'];
+
+    public const EMIRATES = [
+        'Abu Dhabi',
+        'Dubai',
+        'Sharjah',
+        'Ajman',
+        'Umm Al Quwain',
+        'Ras Al Khaimah',
+        'Fujairah',
+    ];
+
+    public function index(Request $request): View
+    {
+        $companyCode = strtoupper(trim((string) $request->query('company', '')));
+
+        $customers = Customer::query()
+            ->when($companyCode !== '', fn ($q) => DataAreaId::whereUpperTrimEquals($q, 'company_id', $companyCode))
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('masters.customers.index', [
+            'customers' => $customers,
+            'types' => self::TYPES,
+            'emirates' => self::EMIRATES,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $request->merge([
             'company_id' => DataAreaId::normalize((string) $request->input('company_id')),
@@ -20,7 +48,7 @@ class CustomerController extends Controller
 
         $validated = $request->validate([
             'company_id' => ['required', 'string', 'max:100'],
-            'type' => ['required', 'string', 'max:50', Rule::in(CustomerMasterController::TYPES)],
+            'type' => ['required', 'string', 'max:50', Rule::in(self::TYPES)],
             'customer_id' => [
                 'required',
                 'string',
@@ -34,13 +62,13 @@ class CustomerController extends Controller
             'address_building' => ['nullable', 'string', 'max:100'],
             'address_area' => ['nullable', 'string', 'max:255'],
             'address_city' => ['nullable', 'string', 'max:100'],
-            'address_emirates' => ['nullable', 'string', 'max:100', Rule::in(CustomerMasterController::EMIRATES)],
+            'address_emirates' => ['nullable', 'string', 'max:100', Rule::in(self::EMIRATES)],
             'address_pincode' => ['nullable', 'string', 'max:20'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
         ]);
 
-        $customer = Customer::create([
+        Customer::create([
             'company_id' => $validated['company_id'],
             'type' => $validated['type'],
             'customer_id' => trim($validated['customer_id']),
@@ -56,11 +84,18 @@ class CustomerController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Customer created successfully',
-            'data' => $customer,
-        ], 201);
+        $params = ['company' => DataAreaId::normalize($validated['company_id'])];
+
+        return redirect()->route('masters.customers.index', $params)->with('status', 'Customer created successfully.');
+    }
+
+    public function destroy(Request $request, Customer $customer): RedirectResponse
+    {
+        $customer->delete();
+
+        $params = ['company' => strtoupper((string) $customer->company_id)];
+
+        return redirect()->route('masters.customers.index', $params)->with('status', 'Customer deleted successfully.');
     }
 
     private function trimOrNull(?string $value): ?string

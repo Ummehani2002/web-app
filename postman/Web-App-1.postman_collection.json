@@ -178,7 +178,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{}"
+							"raw": "{\n  \"company_id\": \"C001\",\n  \"type\": \"Corporate\",\n  \"customer_id\": \"CUST-001\",\n  \"name\": \"Example Customer LLC\",\n  \"address_flat\": \"1204\",\n  \"address_building\": \"Tower B\",\n  \"address_area\": \"Sheikh Zayed Road\",\n  \"address_city\": \"Dubai\",\n  \"address_emirates\": \"Dubai\",\n  \"address_pincode\": \"00000\",\n  \"phone\": \"+971501234567\",\n  \"email\": \"customer@example.com\"\n}"
 						},
 						"url": "{{base_url}}/api/customers"
 					}
