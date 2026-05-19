@@ -10,6 +10,7 @@
 
     $mastersLinks = [
         ['label' => 'Companies', 'route' => 'masters.company.index', 'pattern' => 'masters.company.index'],
+        ['label' => 'Customer Master', 'route' => 'masters.customers.index', 'pattern' => 'masters.customers.*'],
         ['label' => 'Categories', 'route' => 'masters.categories.index', 'pattern' => 'masters.categories.index'],
         ['label' => 'Items', 'route' => 'masters.items.index', 'pattern' => 'masters.items.index'],
         ['label' => 'Sizes', 'route' => 'masters.sizes.index', 'pattern' => 'masters.sizes.index'],
@@ -18,7 +19,6 @@
         ['label' => 'Locations', 'route' => 'masters.locations.index', 'pattern' => 'masters.locations.index'],
         ['label' => 'Sites', 'route' => 'masters.site.index', 'pattern' => 'masters.site.index'],
         ['label' => 'Warehouses', 'route' => 'masters.warehouses.index', 'pattern' => 'masters.warehouses.index'],
-        ['label' => 'Customers', 'route' => 'masters.customers.index', 'pattern' => 'masters.customers.*'],
         ['label' => 'Currencies', 'route' => 'masters.currencies.index', 'pattern' => 'masters.currencies.index'],
         ['label' => 'Units', 'route' => 'masters.units.index', 'pattern' => 'masters.units.index'],
         ['label' => 'Projects', 'route' => 'masters.project.index', 'pattern' => 'masters.project.index'],
